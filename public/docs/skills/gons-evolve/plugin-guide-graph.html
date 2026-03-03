@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Plugin - Visual Guide</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --border: #475569;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --orange: #fb923c;
+    --pink: #f472b6;
+    --red: #f87171;
+    --cyan: #22d3ee;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 48px 24px 32px;
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .header h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .header p { color: var(--text-dim); font-size: 1.05rem; }
+
+  /* Navigation */
+  .nav {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-btn {
+    padding: 8px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover, .nav-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  /* Sections */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    display: none;
+  }
+  .section.active { display: block; }
+  .section h2 {
+    font-size: 1.6rem;
+    margin-bottom: 32px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+  }
+
+  /* === Section 1: Overview Comparison === */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 0;
+    align-items: center;
+    margin-bottom: 40px;
+  }
+  .compare-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 32px;
+    border: 2px solid var(--border);
+    transition: all 0.3s;
+  }
+  .compare-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .compare-card h3 { font-size: 1.2rem; margin-bottom: 16px; }
+  .compare-card.standalone { border-color: var(--yellow); }
+  .compare-card.standalone h3 { color: var(--yellow); }
+  .compare-card.plugin { border-color: var(--accent); }
+  .compare-card.plugin h3 { color: var(--accent); }
+  .compare-arrow {
+    text-align: center;
+    font-size: 2rem;
+    color: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{ opacity:0.4; } 50%{ opacity:1; } }
+  .compare-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.9rem;
+  }
+  .compare-item:last-child { border: none; }
+  .compare-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+
+  /* === Section 2: Directory Structure (Tree) === */
+  .tree-container {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 32px;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .tree-node {
+    position: relative;
+    padding-left: 28px;
+  }
+  .tree-node::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .tree-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin: 4px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .tree-item::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    width: 16px;
+    height: 2px;
+    background: var(--border);
+  }
+  .tree-item:hover { background: var(--surface2); }
+  .tree-item.selected { background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent); }
+  .tree-icon { font-size: 1.2rem; width: 28px; text-align: center; flex-shrink: 0; }
+  .tree-name { font-weight: 600; font-size: 0.95rem; }
+  .tree-desc { color: var(--text-dim); font-size: 0.8rem; margin-left: auto; }
+  .tree-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge-required { background: rgba(248, 113, 113, 0.2); color: var(--red); }
+  .badge-optional { background: rgba(148, 163, 184, 0.2); color: var(--text-dim); }
+  .badge-warn { background: rgba(251, 191, 36, 0.2); color: var(--yellow); }
+
+  .tree-detail {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 24px;
+    border: 1px solid var(--border);
+    display: none;
+  }
+  .tree-detail.show { display: block; animation: fadeIn 0.3s; }
+  .tree-detail h4 { color: var(--accent); margin-bottom: 12px; }
+  .tree-detail code {
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--green);
+  }
+  .tree-detail p { color: var(--text-dim); font-size: 0.9rem; margin-top: 8px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* === Section 3: Creation Flow === */
+  .flow-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+  .flow-line {
+    position: absolute;
+    left: 40px;
+    top: 60px;
+    bottom: 60px;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2), var(--green));
+    border-radius: 3px;
+  }
+  .flow-step {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+  }
+  .flow-number {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    border: 3px solid;
+    background: var(--bg);
+  }
+  .flow-content {
+    flex: 1;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .flow-content h3 { font-size: 1.05rem; margin-bottom: 8px; }
+  .flow-content .cmd {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    color: var(--green);
+    overflow-x: auto;
+  }
+  .flow-content .note {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: rgba(251, 191, 36, 0.1);
+    border-left: 3px solid var(--yellow);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.85rem;
+    color: var(--yellow);
+  }
+
+  /* === Section 4: Components === */
+  .comp-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .comp-tab {
+    padding: 10px 20px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .comp-tab:hover { border-color: var(--accent); }
+  .comp-tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .comp-panel {
+    display: none;
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 32px;
+    border: 1px solid var(--border);
+  }
+  .comp-panel.active { display: block; animation: fadeIn 0.3s; }
+
+  /* Skill Frontmatter Table */
+  .fm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .fm-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: all 0.2s;
+  }
+  .fm-card:hover { border-color: var(--accent); }
+  .fm-card .fm-key {
+    font-family: monospace;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .fm-card .fm-type {
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    margin-left: 8px;
+  }
+  .fm-card .fm-desc {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+
+  /* Invocation Matrix */
+  .matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 0.85rem;
+  }
+  .matrix th {
+    background: var(--surface2);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 700;
+    border-bottom: 2px solid var(--border);
+  }
+  .matrix td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .matrix tr:hover td { background: rgba(255,255,255,0.03); }
+  .check { color: var(--green); font-weight: 700; }
+  .cross { color: var(--red); font-weight: 700; }
+
+  /* Hook Event Flow */
+  .hook-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .hook-event {
+    padding: 10px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: default;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .hook-event:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+  }
+  .hook-event .hook-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  .hook-cat-tool .hook-dot { background: var(--accent); }
+  .hook-cat-session .hook-dot { background: var(--green); }
+  .hook-cat-agent .hook-dot { background: var(--pink); }
+  .hook-cat-user .hook-dot { background: var(--yellow); }
+
+  /* === Section 5: Scope === */
+  .scope-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 24px;
+  }
+  .scope-layer {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 24px;
+    border-radius: 12px;
+    border: 2px solid;
+    position: relative;
+  }
+  .scope-layer + .scope-layer { margin-top: -1px; }
+  .scope-icon { font-size: 2rem; width: 48px; text-align: center; }
+  .scope-info h4 { font-size: 1rem; }
+  .scope-info p { color: var(--text-dim); font-size: 0.85rem; }
+  .scope-info code {
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--green);
+  }
+  .scope-arrow {
+    text-align: center;
+    padding: 4px 0;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+  }
+
+  /* === Section 6: Lifecycle Flow (Big Diagram) === */
+  .lifecycle {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+  .lc-phase {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+  .lc-label {
+    width: 120px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 8px;
+    position: relative;
+  }
+  .lc-label::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .lc-label-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    color: var(--text-dim);
+  }
+  .lc-content {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    align-items: center;
+  }
+  .lc-box {
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 2px solid;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .lc-arrow-down {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0;
+    width: 100%;
+  }
+  .lc-arrow-down svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--text-dim);
+  }
+
+  /* === Section 7: Debug Decision Tree === */
+  .debug-tree {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .debug-node {
+    padding: 16px 28px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    max-width: 400px;
+    position: relative;
+  }
+  .debug-question {
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    color: var(--accent);
+  }
+  .debug-answer {
+    background: var(--surface);
+    border: 2px solid var(--green);
+    color: var(--green);
+    font-size: 0.85rem;
+  }
+  .debug-connector {
+    display: flex;
+    gap: 80px;
+    align-items: flex-start;
+  }
+  .debug-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .debug-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+  .debug-yes { background: rgba(74, 222, 128, 0.2); color: var(--green); }
+  .debug-no { background: rgba(248, 113, 113, 0.2); color: var(--red); }
+  .debug-vline {
+    width: 2px;
+    height: 24px;
+    background: var(--border);
+  }
+
+  /* === Misc === */
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+  .tag-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent); }
+  .tag-green { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+  .tag-yellow { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .tag-pink { background: rgba(244, 114, 182, 0.15); color: var(--pink); }
+  .tag-orange { background: rgba(251, 146, 60, 0.15); color: var(--orange); }
+
+  .info-box {
+    padding: 16px 20px;
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    margin: 16px 0;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+  }
+  .warn-box {
+    padding: 16px 20px;
+    background: rgba(248, 113, 113, 0.08);
+    border-left: 4px solid var(--red);
+    border-radius: 0 10px 10px 0;
+    margin: 16px 0;
+    font-size: 0.9rem;
+    color: var(--red);
+  }
+
+  .sub-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 28px 0 16px;
+    color: var(--accent2);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .compare-grid { grid-template-columns: 1fr; }
+    .compare-arrow { transform: rotate(90deg); padding: 12px 0; }
+    .header h1 { font-size: 1.6rem; }
+    .lc-label { width: 80px; }
+    .lc-label-text { font-size: 0.65rem; }
+    .debug-connector { gap: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>Claude Code Plugin Visual Guide</h1>
+  <p>Plugin 시스템의 모든 것을 한눈에 이해하는 인터랙티브 가이드</p>
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <button class="nav-btn active" data-section="overview">개요</button>
+  <button class="nav-btn" data-section="structure">디렉토리 구조</button>
+  <button class="nav-btn" data-section="creation">생성 흐름</button>
+  <button class="nav-btn" data-section="components">구성 요소</button>
+  <button class="nav-btn" data-section="scope">설치 범위</button>
+  <button class="nav-btn" data-section="lifecycle">전체 라이프사이클</button>
+  <button class="nav-btn" data-section="debug">디버깅</button>
+</div>
+
+<!-- Section 1: Overview -->
+<div id="overview" class="section active">
+  <h2>Standalone vs Plugin</h2>
+  <div class="compare-grid">
+    <div class="compare-card standalone">
+      <h3>Standalone (.claude/)</h3>
+      <div class="compare-item"><span class="compare-icon">📁</span> 위치: <code>.claude/skills/</code></div>
+      <div class="compare-item"><span class="compare-icon">💬</span> 호출: <code>/hello</code></div>
+      <div class="compare-item"><span class="compare-icon">👤</span> 범위: 개인/프로젝트 전용</div>
+      <div class="compare-item"><span class="compare-icon">🔧</span> 공유: 수동 복사</div>
+      <div class="compare-item"><span class="compare-icon">⚡</span> 적합: 빠른 실험, 개인 워크플로우</div>
+    </div>
+    <div class="compare-arrow">→</div>
+    <div class="compare-card plugin">
+      <h3>Plugin (패키지)</h3>
+      <div class="compare-item"><span class="compare-icon">📦</span> 위치: <code>plugin-dir/</code></div>
+      <div class="compare-item"><span class="compare-icon">💬</span> 호출: <code>/name:hello</code></div>
+      <div class="compare-item"><span class="compare-icon">👥</span> 범위: 팀/커뮤니티 공유</div>
+      <div class="compare-item"><span class="compare-icon">🏪</span> 공유: Marketplace 설치</div>
+      <div class="compare-item"><span class="compare-icon">📋</span> 적합: 버전 관리, 배포</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>전략:</strong> .claude/에서 먼저 실험 → 검증 후 Plugin으로 변환 → Marketplace로 배포
+  </div>
+
+  <div class="sub-title">Plugin이 묶을 수 있는 구성 요소</div>
+  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px;">
+    <div class="lc-box" style="border-color:var(--accent); color:var(--accent);">
+      <span>⚡</span> Skills
+    </div>
+    <div class="lc-box" style="border-color:var(--accent2); color:var(--accent2);">
+      <span>🤖</span> Agents
+    </div>
+    <div class="lc-box" style="border-color:var(--yellow); color:var(--yellow);">
+      <span>🪝</span> Hooks
+    </div>
+    <div class="lc-box" style="border-color:var(--green); color:var(--green);">
+      <span>🔌</span> MCP Servers
+    </div>
+    <div class="lc-box" style="border-color:var(--pink); color:var(--pink);">
+      <span>🧠</span> LSP Servers
+    </div>
+    <div class="lc-box" style="border-color:var(--orange); color:var(--orange);">
+      <span>⚙️</span> Settings
+    </div>
+  </div>
+</div>
+
+<!-- Section 2: Directory Structure -->
+<div id="structure" class="section">
+  <h2>Plugin 디렉토리 구조</h2>
+  <div class="warn-box">
+    <strong>핵심 규칙:</strong> <code>plugin.json</code>만 <code>.claude-plugin/</code> 안에! 나머지 전부 Plugin 루트에 배치!
+  </div>
+  <div class="tree-container">
+    <div style="font-size:1.1rem; font-weight:700; margin-bottom:16px; color:var(--accent);">
+      📦 my-plugin/
+    </div>
+    <div class="tree-node">
+      <div class="tree-item" data-detail="detail-manifest">
+        <span class="tree-icon">📋</span>
+        <span class="tree-name">.claude-plugin/plugin.json</span>
+        <span class="tree-badge badge-required">ONLY HERE</span>
+        <span class="tree-desc">매니페스트</span>
+      </div>
+      <div class="tree-item" data-detail="detail-skills">
+        <span class="tree-icon">⚡</span>
+        <span class="tree-name">skills/</span>
+        <span class="tree-badge badge-optional">Optional</span>
+        <span class="tree-desc">스킬 디렉토리</span>
+      </div>
+      <div class="tree-item" data-detail="detail-commands">
+        <span class="tree-icon">💬</span>
+        <span class="tree-name">commands/</span>
+        <span class="tree-badge badge-optional">Legacy</span>
+        <span class="tree-desc">커맨드 (skills/ 권장)</span>
+      </div>
+      <div class="tree-item" data-detail="detail-agents">
+        <span class="tree-icon">🤖</span>
+        <span class="tree-name">agents/</span>
+        <span class="tree-badge badge-optional">Optional</span>
+        <span class="tree-desc">에이전트 정의</span>
+      </div>
+      <div class="tree-item" data-detail="detail-hooks">
+        <span class="tree-icon">🪝</span>
+        <span class="tree-name">hooks/hooks.json</span>
+        <span class="tree-badge badge-optional">Optional</span>
+        <span class="tree-desc">이벤트 핸들러</span>
+      </div>
+      <div class="tree-item" data-detail="detail-scripts">
+        <span class="tree-icon">📜</span>
+        <span class="tree-name">scripts/</span>
+        <span class="tree-badge badge-optional">Optional</span>
+        <span class="tree-desc">유틸리티 스크립트</span>
+      </div>
+      <div class="tree-item" data-detail="detail-mcp">
+        <span class="tree-icon">🔌</span>
+        <span class="tree-name">.mcp.json</span>
+        <span class="tree-badge badge-optional">Optional</span>
+        <span class="tree-desc">MCP 서버 설정</span>
+      </div>
+      <div class="tree-item" data-detail="detail-lsp">
+        <span class="tree-icon">🧠</span>
+        <span class="tree-name">.lsp.json</span>
+        <span class="tree-badge badge-optional">Optional</span>
+        <span class="tree-desc">LSP 서버 설정</span>
+      </div>
+      <div class="tree-item" data-detail="detail-settings">
+        <span class="tree-icon">⚙️</span>
+        <span class="tree-name">settings.json</span>
+        <span class="tree-badge badge-optional">Optional</span>
+        <span class="tree-desc">기본 설정</span>
+      </div>
+    </div>
+
+    <!-- Detail Panels -->
+    <div id="detail-manifest" class="tree-detail">
+      <h4>📋 .claude-plugin/plugin.json (매니페스트)</h4>
+      <p>Plugin의 <strong>유일한 필수 파일</strong>. name 필드만 필수이며, 네임스페이스로 사용됩니다.</p>
+      <div style="margin-top:12px; font-family:monospace; font-size:0.85rem; color:var(--green); background:var(--bg); padding:16px; border-radius:8px; white-space:pre; overflow-x:auto;">{
+  "name": "my-plugin",        <span style="color:var(--red);">← 필수! 네임스페이스</span>
+  "version": "1.0.0",         <span style="color:var(--text-dim);">← 시맨틱 버전</span>
+  "description": "설명",       <span style="color:var(--text-dim);">← Marketplace 표시</span>
+  "author": { "name": "..." },
+  "keywords": ["tag1", "tag2"]
+}</div>
+    </div>
+    <div id="detail-skills" class="tree-detail">
+      <h4>⚡ skills/ (스킬)</h4>
+      <p>Plugin의 핵심. <code>skills/&lt;name&gt;/SKILL.md</code> 구조. 호출: <code>/plugin-name:skill-name</code></p>
+      <div style="margin-top:12px; font-family:monospace; font-size:0.85rem; color:var(--green); background:var(--bg); padding:16px; border-radius:8px; white-space:pre;">skills/
+├── code-review/
+│   ├── SKILL.md       <span style="color:var(--red);">← 필수</span>
+│   ├── reference.md   <span style="color:var(--text-dim);">← 보조 파일</span>
+│   └── scripts/       <span style="color:var(--text-dim);">← 스크립트</span>
+└── deploy/
+    └── SKILL.md</div>
+    </div>
+    <div id="detail-commands" class="tree-detail">
+      <h4>💬 commands/ (레거시)</h4>
+      <p><code>skills/</code>와 동일 기능. 단일 .md 파일로 스킬 정의. <strong>새 프로젝트에서는 skills/ 권장.</strong></p>
+    </div>
+    <div id="detail-agents" class="tree-detail">
+      <h4>🤖 agents/ (에이전트)</h4>
+      <p>Markdown 파일로 정의. YAML frontmatter (name, description) + 시스템 프롬프트 본문.</p>
+      <p><code>/agents</code>에서 확인, Claude가 자동 호출 또는 사용자가 수동 호출.</p>
+    </div>
+    <div id="detail-hooks" class="tree-detail">
+      <h4>🪝 hooks/hooks.json (훅)</h4>
+      <p>이벤트(PostToolUse, SessionStart 등)에 반응하는 핸들러. 3가지 타입: command, prompt, agent</p>
+      <p>스크립트 경로에는 반드시 <code>${CLAUDE_PLUGIN_ROOT}</code> 사용!</p>
+    </div>
+    <div id="detail-scripts" class="tree-detail">
+      <h4>📜 scripts/ (유틸리티)</h4>
+      <p>훅이나 스킬에서 참조하는 스크립트. <code>chmod +x</code> 필수! shebang (<code>#!/bin/bash</code>) 확인.</p>
+    </div>
+    <div id="detail-mcp" class="tree-detail">
+      <h4>🔌 .mcp.json (MCP 서버)</h4>
+      <p>외부 도구 연동. Plugin 활성화 시 자동 시작. <code>plugin.json</code>에 인라인 정의도 가능.</p>
+    </div>
+    <div id="detail-lsp" class="tree-detail">
+      <h4>🧠 .lsp.json (LSP 서버)</h4>
+      <p>언어 서버 설정. 실시간 진단, 코드 네비게이션 제공. LSP 바이너리는 별도 설치 필요!</p>
+    </div>
+    <div id="detail-settings" class="tree-detail">
+      <h4>⚙️ settings.json (기본 설정)</h4>
+      <p>현재 <code>agent</code> 키만 지원. Plugin의 에이전트를 메인 스레드로 활성화.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Section 3: Creation Flow -->
+<div id="creation" class="section">
+  <h2>Plugin 생성 4단계</h2>
+  <div class="flow-container">
+    <div class="flow-line"></div>
+
+    <div class="flow-step">
+      <div class="flow-number" style="border-color:var(--accent); color:var(--accent);">1</div>
+      <div class="flow-content">
+        <h3>디렉토리 생성</h3>
+        <p style="color:var(--text-dim); font-size:0.9rem;">Plugin 루트와 매니페스트 디렉토리 만들기</p>
+        <div class="cmd">mkdir -p my-plugin/.claude-plugin</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-number" style="border-color:var(--accent2); color:var(--accent2);">2</div>
+      <div class="flow-content">
+        <h3>plugin.json 작성</h3>
+        <p style="color:var(--text-dim); font-size:0.9rem;"><code>name</code> 필드만 필수. 이것이 네임스페이스가 됩니다.</p>
+        <div class="cmd">{
+  "name": "my-plugin",
+  "description": "내 플러그인",
+  "version": "1.0.0"
+}</div>
+        <div class="note">name이 "my-plugin"이면 스킬 호출은 /my-plugin:skill-name</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-number" style="border-color:var(--yellow); color:var(--yellow);">3</div>
+      <div class="flow-content">
+        <h3>컴포넌트 추가</h3>
+        <p style="color:var(--text-dim); font-size:0.9rem;">skills/, agents/, hooks/ 등 필요한 구성 요소 추가</p>
+        <div class="cmd">mkdir -p my-plugin/skills/hello
+
+# skills/hello/SKILL.md 작성
+---
+name: hello
+description: 인사 스킬
+---
+사용자에게 인사하세요.</div>
+        <div class="note">모든 디렉토리는 Plugin 루트에! .claude-plugin/ 안에 넣지 않기!</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-number" style="border-color:var(--green); color:var(--green);">4</div>
+      <div class="flow-content">
+        <h3>테스트 & 배포</h3>
+        <p style="color:var(--text-dim); font-size:0.9rem;">로컬 테스트 후 Marketplace로 배포</p>
+        <div class="cmd"># 로컬 테스트
+claude --plugin-dir ./my-plugin
+
+# Claude Code 안에서 실행
+/my-plugin:hello</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 4: Components -->
+<div id="components" class="section">
+  <h2>구성 요소 상세</h2>
+  <div class="comp-tabs">
+    <button class="comp-tab active" data-panel="panel-skills"><span>⚡</span> Skills</button>
+    <button class="comp-tab" data-panel="panel-agents"><span>🤖</span> Agents</button>
+    <button class="comp-tab" data-panel="panel-hooks"><span>🪝</span> Hooks</button>
+    <button class="comp-tab" data-panel="panel-mcp"><span>🔌</span> MCP</button>
+    <button class="comp-tab" data-panel="panel-lsp"><span>🧠</span> LSP</button>
+  </div>
+
+  <!-- Skills Panel -->
+  <div id="panel-skills" class="comp-panel active">
+    <div class="sub-title">SKILL.md Frontmatter 필드</div>
+    <div class="fm-grid">
+      <div class="fm-card">
+        <span class="fm-key">name</span><span class="fm-type">string</span>
+        <div class="fm-desc">스킬 이름 (소문자, 숫자, 하이픈, 최대 64자). 생략 시 디렉토리명 사용</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-key">description</span><span class="fm-type">string</span>
+        <div class="fm-desc">Claude가 자동 호출 판단에 사용. 권장 필드</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-key">disable-model-invocation</span><span class="fm-type">boolean</span>
+        <div class="fm-desc">true → 사용자 수동 호출만 가능 (deploy 등에 적합)</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-key">user-invocable</span><span class="fm-type">boolean</span>
+        <div class="fm-desc">false → / 메뉴에서 숨김. Claude만 호출 가능</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-key">allowed-tools</span><span class="fm-type">string</span>
+        <div class="fm-desc">허용 도구 제한. 예: Read, Grep, Glob</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-key">model</span><span class="fm-type">string</span>
+        <div class="fm-desc">실행 모델 지정 (haiku, sonnet 등)</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-key">context</span><span class="fm-type">string</span>
+        <div class="fm-desc">"fork" → 서브에이전트에서 격리 실행</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-key">agent</span><span class="fm-type">string</span>
+        <div class="fm-desc">context: fork 시 에이전트 타입 (Explore, Plan 등)</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-key">argument-hint</span><span class="fm-type">string</span>
+        <div class="fm-desc">자동완성 힌트. 예: [issue-number]</div>
+      </div>
+    </div>
+
+    <div class="sub-title">호출 제어 매트릭스</div>
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th>Frontmatter 설정</th>
+          <th>사용자 호출</th>
+          <th>Claude 자동 호출</th>
+          <th>description 로드</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-blue">기본값</span></td>
+          <td class="check">O</td>
+          <td class="check">O</td>
+          <td>항상</td>
+        </tr>
+        <tr>
+          <td><code>disable-model-invocation: true</code></td>
+          <td class="check">O</td>
+          <td class="cross">X</td>
+          <td>미로드</td>
+        </tr>
+        <tr>
+          <td><code>user-invocable: false</code></td>
+          <td class="cross">X</td>
+          <td class="check">O</td>
+          <td>항상</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="sub-title">인수 치환 변수</div>
+    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;">
+      <div class="lc-box" style="border-color:var(--green); color:var(--green); font-family:monospace; font-size:0.85rem;">$ARGUMENTS</div>
+      <div class="lc-box" style="border-color:var(--accent); color:var(--accent); font-family:monospace; font-size:0.85rem;">$ARGUMENTS[N]</div>
+      <div class="lc-box" style="border-color:var(--yellow); color:var(--yellow); font-family:monospace; font-size:0.85rem;">$0, $1, $2 ...</div>
+      <div class="lc-box" style="border-color:var(--pink); color:var(--pink); font-family:monospace; font-size:0.85rem;">${CLAUDE_SESSION_ID}</div>
+      <div class="lc-box" style="border-color:var(--orange); color:var(--orange); font-family:monospace; font-size:0.85rem;">!`shell command`</div>
+    </div>
+  </div>
+
+  <!-- Agents Panel -->
+  <div id="panel-agents" class="comp-panel">
+    <div class="sub-title">에이전트 정의 구조</div>
+    <div style="font-family:monospace; font-size:0.85rem; color:var(--green); background:var(--bg); padding:20px; border-radius:10px; white-space:pre; overflow-x:auto; border:1px solid var(--border);">
+<span style="color:var(--text-dim);"># agents/security-reviewer.md</span>
+<span style="color:var(--yellow);">---</span>
+<span style="color:var(--accent);">name:</span> security-reviewer
+<span style="color:var(--accent);">description:</span> 보안 취약점 전문 검토 에이전트
+<span style="color:var(--yellow);">---</span>
+
+보안 리뷰 전문가로서, OWASP Top 10을 검토합니다.
+입력 검증, 인증, 권한 체크를 중점 분석합니다.</div>
+    <div class="info-box" style="margin-top:20px;">
+      <strong>통합 방식:</strong> /agents에서 확인 가능 | Claude가 작업 맥락에 따라 자동 호출 | 사용자가 수동 호출 가능
+    </div>
+    <div class="info-box">
+      <strong>settings.json 연동:</strong> <code>{"agent": "security-reviewer"}</code>로 메인 에이전트 설정 가능
+    </div>
+  </div>
+
+  <!-- Hooks Panel -->
+  <div id="panel-hooks" class="comp-panel">
+    <div class="sub-title">사용 가능한 이벤트 (14가지)</div>
+    <div class="hook-flow">
+      <div class="hook-event hook-cat-tool"><span class="hook-dot"></span>PreToolUse</div>
+      <div class="hook-event hook-cat-tool"><span class="hook-dot"></span>PostToolUse</div>
+      <div class="hook-event hook-cat-tool"><span class="hook-dot"></span>PostToolUseFailure</div>
+      <div class="hook-event hook-cat-tool"><span class="hook-dot"></span>PermissionRequest</div>
+      <div class="hook-event hook-cat-user"><span class="hook-dot"></span>UserPromptSubmit</div>
+      <div class="hook-event hook-cat-user"><span class="hook-dot"></span>Notification</div>
+      <div class="hook-event hook-cat-session"><span class="hook-dot"></span>SessionStart</div>
+      <div class="hook-event hook-cat-session"><span class="hook-dot"></span>SessionEnd</div>
+      <div class="hook-event hook-cat-session"><span class="hook-dot"></span>Stop</div>
+      <div class="hook-event hook-cat-session"><span class="hook-dot"></span>PreCompact</div>
+      <div class="hook-event hook-cat-agent"><span class="hook-dot"></span>SubagentStart</div>
+      <div class="hook-event hook-cat-agent"><span class="hook-dot"></span>SubagentStop</div>
+      <div class="hook-event hook-cat-agent"><span class="hook-dot"></span>TeammateIdle</div>
+      <div class="hook-event hook-cat-agent"><span class="hook-dot"></span>TaskCompleted</div>
+    </div>
+    <div style="display:flex; gap:20px; margin-top:16px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--text-dim);">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block;"></span> Tool 관련
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--text-dim);">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--yellow);display:inline-block;"></span> User 관련
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--text-dim);">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block;"></span> Session 관련
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--text-dim);">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--pink);display:inline-block;"></span> Agent 관련
+      </div>
+    </div>
+
+    <div class="sub-title" style="margin-top:28px;">훅 타입 3가지</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:12px; margin-top:12px;">
+      <div class="fm-card">
+        <span class="fm-key">command</span>
+        <div class="fm-desc">셸 명령/스크립트 실행. <code>${CLAUDE_PLUGIN_ROOT}</code>로 경로 참조</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-key">prompt</span>
+        <div class="fm-desc">LLM에 프롬프트 평가. <code>$ARGUMENTS</code>로 컨텍스트 전달</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-key">agent</span>
+        <div class="fm-desc">에이전틱 검증기. 도구 사용 가능한 복잡한 검증 작업</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MCP Panel -->
+  <div id="panel-mcp" class="comp-panel">
+    <div class="sub-title">MCP 서버 설정 (.mcp.json)</div>
+    <div style="font-family:monospace; font-size:0.85rem; color:var(--green); background:var(--bg); padding:20px; border-radius:10px; white-space:pre; overflow-x:auto; border:1px solid var(--border);">
+{
+  "mcpServers": {
+    "my-db": {
+      "command": "<span style="color:var(--yellow);">${CLAUDE_PLUGIN_ROOT}</span>/servers/db-server",
+      "args": ["--config", "<span style="color:var(--yellow);">${CLAUDE_PLUGIN_ROOT}</span>/config.json"],
+      "env": {
+        "DB_PATH": "<span style="color:var(--yellow);">${CLAUDE_PLUGIN_ROOT}</span>/data"
+      }
+    }
+  }
+}</div>
+    <div style="display:flex; gap:16px; margin-top:20px; flex-wrap:wrap;">
+      <span class="tag tag-green">Plugin 활성화 시 자동 시작</span>
+      <span class="tag tag-blue">Claude 도구로 자동 통합</span>
+      <span class="tag tag-yellow">plugin.json에 인라인 정의 가능</span>
+    </div>
+  </div>
+
+  <!-- LSP Panel -->
+  <div id="panel-lsp" class="comp-panel">
+    <div class="sub-title">LSP 서버 설정 (.lsp.json)</div>
+    <div style="font-family:monospace; font-size:0.85rem; color:var(--green); background:var(--bg); padding:20px; border-radius:10px; white-space:pre; overflow-x:auto; border:1px solid var(--border);">
+{
+  "go": {
+    "command": "gopls",          <span style="color:var(--red);">← 필수 (PATH에 있어야 함)</span>
+    "args": ["serve"],
+    "extensionToLanguage": {     <span style="color:var(--red);">← 필수</span>
+      ".go": "go"
+    },
+    "transport": "stdio",        <span style="color:var(--text-dim);">← 선택 (기본: stdio)</span>
+    "restartOnCrash": true,      <span style="color:var(--text-dim);">← 선택</span>
+    "maxRestarts": 3             <span style="color:var(--text-dim);">← 선택</span>
+  }
+}</div>
+    <div class="warn-box" style="margin-top:20px;">
+      <strong>주의:</strong> LSP 바이너리는 Plugin에 포함되지 않습니다. 사용자가 별도로 설치해야 합니다.
+    </div>
+    <div class="sub-title">제공 기능</div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">
+      <span class="tag tag-green">실시간 진단 (에러/경고)</span>
+      <span class="tag tag-blue">코드 네비게이션 (go to definition)</span>
+      <span class="tag tag-pink">타입 정보 & 문서</span>
+    </div>
+  </div>
+</div>
+
+<!-- Section 5: Scope -->
+<div id="scope" class="section">
+  <h2>설치 범위 (Scope)</h2>
+
+  <div class="scope-diagram">
+    <div class="scope-layer" style="border-color:var(--pink); background:rgba(244,114,182,0.05);">
+      <div class="scope-icon">🏢</div>
+      <div class="scope-info">
+        <h4 style="color:var(--pink);">Managed (조직)</h4>
+        <p>조직 전체에 적용. 읽기 전용, 업데이트만 가능</p>
+        <code>managed settings (read-only)</code>
+      </div>
+    </div>
+    <div class="scope-arrow">↓ 우선순위 낮아짐</div>
+    <div class="scope-layer" style="border-color:var(--accent); background:rgba(56,189,248,0.05);">
+      <div class="scope-icon">👤</div>
+      <div class="scope-info">
+        <h4 style="color:var(--accent);">User (개인) — 기본값</h4>
+        <p>모든 프로젝트에서 사용 가능한 개인 Plugin</p>
+        <code>~/.claude/settings.json</code>
+      </div>
+    </div>
+    <div class="scope-arrow">↓</div>
+    <div class="scope-layer" style="border-color:var(--green); background:rgba(74,222,128,0.05);">
+      <div class="scope-icon">👥</div>
+      <div class="scope-info">
+        <h4 style="color:var(--green);">Project (팀 공유)</h4>
+        <p>버전 관리됨. 팀원 모두 사용 가능</p>
+        <code>.claude/settings.json</code>
+      </div>
+    </div>
+    <div class="scope-arrow">↓</div>
+    <div class="scope-layer" style="border-color:var(--yellow); background:rgba(251,191,36,0.05);">
+      <div class="scope-icon">📌</div>
+      <div class="scope-info">
+        <h4 style="color:var(--yellow);">Local (개인/프로젝트)</h4>
+        <p>gitignore 대상. 이 프로젝트에서만, 이 사람만</p>
+        <code>.claude/settings.local.json</code>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:32px; font-family:monospace; font-size:0.85rem; color:var(--green); background:var(--surface); padding:20px; border-radius:10px; white-space:pre; overflow-x:auto; border:1px solid var(--border);">
+<span style="color:var(--text-dim);"># 기본 (user)</span>
+claude plugin install my-plugin@marketplace
+
+<span style="color:var(--text-dim);"># 프로젝트 범위 (팀 공유, git 추적)</span>
+claude plugin install my-plugin@marketplace <span style="color:var(--accent);">--scope project</span>
+
+<span style="color:var(--text-dim);"># 로컬 범위 (gitignore)</span>
+claude plugin install my-plugin@marketplace <span style="color:var(--yellow);">--scope local</span></div>
+</div>
+
+<!-- Section 6: Full Lifecycle -->
+<div id="lifecycle" class="section">
+  <h2>Plugin 전체 라이프사이클</h2>
+
+  <div class="lifecycle">
+    <!-- Create Phase -->
+    <div class="lc-phase">
+      <div class="lc-label" style="background:rgba(56,189,248,0.08);">
+        <span class="lc-label-text" style="color:var(--accent);">CREATE</span>
+      </div>
+      <div class="lc-content">
+        <div class="lc-box" style="border-color:var(--accent); color:var(--accent);">📁 mkdir Plugin 구조</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--accent); color:var(--accent);">📋 plugin.json 작성</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--accent); color:var(--accent);">⚡ 컴포넌트 추가</div>
+      </div>
+    </div>
+
+    <!-- Test Phase -->
+    <div class="lc-phase">
+      <div class="lc-label" style="background:rgba(251,191,36,0.08);">
+        <span class="lc-label-text" style="color:var(--yellow);">TEST</span>
+      </div>
+      <div class="lc-content">
+        <div class="lc-box" style="border-color:var(--yellow); color:var(--yellow);">🧪 --plugin-dir 로컬 테스트</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--yellow); color:var(--yellow);">🔍 --debug 로그 확인</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--yellow); color:var(--yellow);">✅ /name:skill 동작 확인</div>
+      </div>
+    </div>
+
+    <!-- Distribute Phase -->
+    <div class="lc-phase">
+      <div class="lc-label" style="background:rgba(129,140,248,0.08);">
+        <span class="lc-label-text" style="color:var(--accent2);">DISTRIBUTE</span>
+      </div>
+      <div class="lc-content">
+        <div class="lc-box" style="border-color:var(--accent2); color:var(--accent2);">📋 version 설정</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--accent2); color:var(--accent2);">📖 README 작성</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--accent2); color:var(--accent2);">🏪 Marketplace 등록</div>
+      </div>
+    </div>
+
+    <!-- Install Phase -->
+    <div class="lc-phase">
+      <div class="lc-label" style="background:rgba(74,222,128,0.08);">
+        <span class="lc-label-text" style="color:var(--green);">INSTALL</span>
+      </div>
+      <div class="lc-content">
+        <div class="lc-box" style="border-color:var(--green); color:var(--green);">📥 plugin install</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--green); color:var(--green);">💾 ~/.claude/plugins/cache 복사</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--green); color:var(--green);">🎯 자동 활성화</div>
+      </div>
+    </div>
+
+    <!-- Runtime Phase -->
+    <div class="lc-phase">
+      <div class="lc-label" style="background:rgba(244,114,182,0.08);">
+        <span class="lc-label-text" style="color:var(--pink);">RUNTIME</span>
+      </div>
+      <div class="lc-content">
+        <div class="lc-box" style="border-color:var(--pink); color:var(--pink);">🔌 MCP/LSP 자동 시작</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--pink); color:var(--pink);">🪝 Hooks 이벤트 감시</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--pink); color:var(--pink);">⚡ Skills/Agents 호출 대기</div>
+      </div>
+    </div>
+
+    <!-- Maintain Phase -->
+    <div class="lc-phase">
+      <div class="lc-label" style="background:rgba(251,146,60,0.08);">
+        <span class="lc-label-text" style="color:var(--orange);">MAINTAIN</span>
+      </div>
+      <div class="lc-content">
+        <div class="lc-box" style="border-color:var(--orange); color:var(--orange);">🔄 plugin update</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--orange); color:var(--orange);">⏸️ plugin disable</div>
+        <span style="color:var(--text-dim);">→</span>
+        <div class="lc-box" style="border-color:var(--orange); color:var(--orange);">🗑️ plugin uninstall</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box" style="margin-top:32px;">
+    <strong>버전 주의:</strong> 코드를 변경하고 version을 올리지 않으면, 캐싱 때문에 기존 사용자에게 업데이트가 반영되지 않습니다!
+  </div>
+</div>
+
+<!-- Section 7: Debug -->
+<div id="debug" class="section">
+  <h2>디버깅 가이드</h2>
+
+  <div class="sub-title">문제 해결 의사결정 트리</div>
+  <div class="debug-tree">
+    <div class="debug-node debug-question">Plugin이 로드되지 않나요?</div>
+    <div class="debug-vline"></div>
+
+    <div class="debug-connector">
+      <div class="debug-branch">
+        <span class="debug-label debug-yes">YES</span>
+        <div class="debug-vline"></div>
+        <div class="debug-node debug-question" style="font-size:0.85rem;">plugin.json JSON 문법 오류?</div>
+        <div class="debug-vline"></div>
+        <div class="debug-connector" style="gap:40px;">
+          <div class="debug-branch">
+            <span class="debug-label debug-yes">YES</span>
+            <div class="debug-vline"></div>
+            <div class="debug-node debug-answer">claude plugin validate 실행</div>
+          </div>
+          <div class="debug-branch">
+            <span class="debug-label debug-no">NO</span>
+            <div class="debug-vline"></div>
+            <div class="debug-node debug-answer">claude --debug로 로그 확인</div>
+          </div>
+        </div>
+      </div>
+      <div class="debug-branch">
+        <span class="debug-label debug-no">NO (스킬/훅 안 됨)</span>
+        <div class="debug-vline"></div>
+        <div class="debug-node debug-question" style="font-size:0.85rem;">컴포넌트가 .claude-plugin/ 안에 있나?</div>
+        <div class="debug-vline"></div>
+        <div class="debug-connector" style="gap:40px;">
+          <div class="debug-branch">
+            <span class="debug-label debug-yes">YES</span>
+            <div class="debug-vline"></div>
+            <div class="debug-node debug-answer">Plugin 루트로 이동!</div>
+          </div>
+          <div class="debug-branch">
+            <span class="debug-label debug-no">NO</span>
+            <div class="debug-vline"></div>
+            <div class="debug-node debug-answer">chmod +x 및 경로 확인</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub-title" style="margin-top:40px;">일반적인 문제와 해결</div>
+  <table class="matrix">
+    <thead>
+      <tr><th>문제</th><th>원인</th><th>해결</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag tag-pink">Plugin 로드 안 됨</span></td>
+        <td>plugin.json JSON 오류</td>
+        <td><code>claude plugin validate</code></td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-pink">스킬/커맨드 안 보임</span></td>
+        <td>디렉토리 위치 잘못됨</td>
+        <td>.claude-plugin/ 밖 루트에 배치</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-yellow">훅 실행 안 됨</span></td>
+        <td>스크립트 권한 없음</td>
+        <td><code>chmod +x script.sh</code></td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-yellow">훅 트리거 안 됨</span></td>
+        <td>이벤트명 대소문자</td>
+        <td>PostToolUse (대소문자 구분!)</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-orange">MCP 서버 실패</span></td>
+        <td>경로 오류</td>
+        <td><code>${CLAUDE_PLUGIN_ROOT}</code> 사용</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-orange">절대 경로 오류</span></td>
+        <td>절대 경로 사용</td>
+        <td>모든 경로 <code>./</code>로 시작</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-blue">LSP 바이너리 없음</span></td>
+        <td>미설치</td>
+        <td>해당 언어 서버 별도 설치</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-blue">업데이트 반영 안 됨</span></td>
+        <td>version 미변경</td>
+        <td>plugin.json version 필드 업데이트</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sub-title" style="margin-top:28px;">CLI 명령어 요약</div>
+  <div style="font-family:monospace; font-size:0.85rem; color:var(--green); background:var(--surface); padding:20px; border-radius:10px; white-space:pre; overflow-x:auto; border:1px solid var(--border);">
+claude <span style="color:var(--accent);">plugin install</span>   &lt;name&gt; [--scope user|project|local]
+claude <span style="color:var(--red);">plugin uninstall</span> &lt;name&gt; [--scope ...]
+claude <span style="color:var(--green);">plugin enable</span>    &lt;name&gt; [--scope ...]
+claude <span style="color:var(--yellow);">plugin disable</span>   &lt;name&gt; [--scope ...]
+claude <span style="color:var(--accent2);">plugin update</span>    &lt;name&gt; [--scope ...]
+
+<span style="color:var(--text-dim);"># 개발 & 디버깅</span>
+claude <span style="color:var(--orange);">--plugin-dir</span> ./my-plugin       <span style="color:var(--text-dim);"># 로컬 테스트</span>
+claude <span style="color:var(--orange);">--debug</span>                         <span style="color:var(--text-dim);"># 로딩 상세 로그</span></div>
+</div>
+
+<!-- Footer -->
+<div style="text-align:center; padding:40px; color:var(--text-dim); font-size:0.85rem; border-top:1px solid var(--border);">
+  Claude Code Plugin Visual Guide | 공식 문서 기반: <a href="https://code.claude.com/docs/en/plugins" style="color:var(--accent);">code.claude.com/docs/en/plugins</a>
+</div>
+
+<script>
+  // Navigation
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.section).classList.add('active');
+    });
+  });
+
+  // Tree item click
+  document.querySelectorAll('.tree-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.tree-item').forEach(i => i.classList.remove('selected'));
+      document.querySelectorAll('.tree-detail').forEach(d => d.classList.remove('show'));
+      item.classList.add('selected');
+      const detail = document.getElementById(item.dataset.detail);
+      if (detail) detail.classList.add('show');
+    });
+  });
+
+  // Component tabs
+  document.querySelectorAll('.comp-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.comp-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.comp-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

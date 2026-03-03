@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Sub-agents - Visual Guide</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #131829;
+    --surface2: #1c2340;
+    --surface3: #252d4a;
+    --border: #2a3358;
+    --border-hover: #4a5580;
+    --text: #e2e8f0;
+    --text-dim: #8892b0;
+    --text-muted: #5a6380;
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --purple: #a78bfa;
+    --purple-bg: rgba(167,139,250,0.08);
+    --green: #4ade80;
+    --green-bg: rgba(74,222,128,0.08);
+    --yellow: #fbbf24;
+    --yellow-bg: rgba(251,191,36,0.08);
+    --orange: #fb923c;
+    --orange-bg: rgba(251,146,60,0.08);
+    --pink: #f472b6;
+    --pink-bg: rgba(244,114,182,0.08);
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,0.08);
+    --cyan: #22d3ee;
+    --cyan-bg: rgba(34,211,238,0.08);
+    --blue: #60a5fa;
+    --blue-bg: rgba(96,165,250,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 56px 24px 40px;
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .header p { color: var(--text-dim); font-size: 1.05rem; position: relative; }
+
+  /* Navigation */
+  .nav {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .nav-btn {
+    padding: 8px 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.25s;
+    white-space: nowrap;
+  }
+  .nav-btn:hover { background: var(--surface3); color: var(--text); border-color: var(--border-hover); }
+  .nav-btn.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: var(--bg);
+    border-color: transparent;
+    box-shadow: 0 2px 12px rgba(56,189,248,0.25);
+  }
+
+  /* Sections */
+  .section {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    display: none;
+  }
+  .section.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .icon { font-size: 1.3rem; }
+  .section-desc {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    margin-bottom: 36px;
+    max-width: 700px;
+  }
+
+  /* ========== Section 1: Architecture Overview ========== */
+  .arch-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .arch-main {
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(129,140,248,0.12));
+    border: 2px solid var(--accent);
+    border-radius: 20px;
+    padding: 28px 40px;
+    text-align: center;
+    width: 320px;
+    position: relative;
+    box-shadow: 0 0 40px rgba(56,189,248,0.1);
+  }
+  .arch-main .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 4px; }
+  .arch-main .name { font-size: 1.4rem; font-weight: 800; }
+  .arch-main .desc { font-size: 0.82rem; color: var(--text-dim); margin-top: 6px; }
+
+  .arch-arrow-down {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .arch-arrow-down .line { width: 2px; height: 24px; background: var(--border-hover); }
+  .arch-arrow-down .label { font-size: 0.72rem; color: var(--text-muted); background: var(--surface2); padding: 2px 12px; border-radius: 10px; border: 1px solid var(--border); }
+
+  .arch-agents-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .arch-agent {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    width: 200px;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: default;
+    position: relative;
+  }
+  .arch-agent:hover { transform: translateY(-4px); border-color: var(--border-hover); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .arch-agent .emoji { font-size: 2rem; margin-bottom: 8px; display: block; }
+  .arch-agent .name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+  .arch-agent .model-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .arch-agent .tools { font-size: 0.72rem; color: var(--text-muted); }
+
+  .badge-haiku { background: var(--green-bg); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+  .badge-inherit { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(96,165,250,0.2); }
+  .badge-sonnet { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+  .badge-opus { background: var(--orange-bg); color: var(--orange); border: 1px solid rgba(251,146,60,0.2); }
+
+  .arch-legend {
+    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+    margin-top: 24px; padding: 16px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border);
+  }
+  .arch-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-dim); }
+  .arch-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Separation line */
+  .arch-sep {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 8px 0;
+  }
+  .arch-sep .line { flex: 1; height: 1px; background: var(--border); }
+  .arch-sep .label { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+
+  /* ========== Section 2: Context Flow ========== */
+  .flow-container { display: flex; flex-direction: column; gap: 0; align-items: center; }
+
+  .flow-step {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  .flow-step-num {
+    width: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .flow-step-num .circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .flow-step-num .vline { flex: 1; width: 2px; background: var(--border); }
+
+  .flow-step-content {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.3s;
+  }
+  .flow-step-content:hover { border-color: var(--accent); }
+  .flow-step-content h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+  .flow-step-content p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+
+  .flow-step-visual {
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    margin-bottom: 16px;
+  }
+  .flow-visual-box {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: var(--text-muted);
+    width: 100%;
+    line-height: 1.7;
+  }
+  .flow-visual-box .hl { color: var(--accent); font-weight: 600; }
+  .flow-visual-box .hl2 { color: var(--purple); font-weight: 600; }
+  .flow-visual-box .hl3 { color: var(--green); font-weight: 600; }
+  .flow-visual-box .dim { color: var(--text-muted); }
+
+  /* ========== Section 3: Scope & Priority ========== */
+  .scope-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .scope-layer {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    transition: all 0.3s;
+    cursor: default;
+  }
+  .scope-layer:first-child { border-radius: 16px 16px 0 0; }
+  .scope-layer:last-child { border-bottom: 1px solid var(--border); border-radius: 0 0 16px 16px; }
+  .scope-layer:hover { border-color: var(--accent); z-index: 1; }
+
+  .scope-priority {
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 900;
+    flex-shrink: 0;
+  }
+  .scope-info {
+    flex: 1;
+    padding: 20px 24px;
+    border-left: 1px solid var(--border);
+  }
+  .scope-info h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .scope-info .path { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; }
+  .scope-info .desc { font-size: 0.82rem; color: var(--text-dim); }
+
+  .scope-indicator {
+    width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-left: 1px solid var(--border);
+  }
+  .scope-badge {
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .priority-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 20px; padding: 12px 20px;
+    background: var(--surface); border-radius: 10px; border: 1px solid var(--border);
+    max-width: 800px; margin-left: auto; margin-right: auto;
+  }
+  .priority-bar .label { font-size: 0.78rem; color: var(--text-muted); }
+  .priority-bar .arrow { flex: 1; height: 3px; margin: 0 16px; background: linear-gradient(90deg, var(--red), var(--green)); border-radius: 2px; }
+
+  /* ========== Section 4: Tools Control ========== */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .tool-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s;
+  }
+  .tool-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .tool-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .tool-card .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    margin-bottom: 12px;
+    overflow-x: auto;
+  }
+  .tool-card .note { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; }
+  .tool-card .note strong { color: var(--text); }
+
+  .tool-matrix {
+    margin-top: 32px;
+    overflow-x: auto;
+  }
+  .tool-matrix table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  .tool-matrix th {
+    background: var(--surface2);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 700;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  .tool-matrix td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tool-matrix tr:hover td { background: var(--surface); }
+  .tool-check { color: var(--green); font-weight: 700; }
+  .tool-deny { color: var(--red); font-weight: 700; }
+  .tool-inherit { color: var(--blue); font-size: 0.75rem; }
+
+  /* ========== Section 5: Lifecycle / Hooks ========== */
+  .lifecycle-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .lc-phase {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+  .lc-phase:hover { border-color: var(--accent); }
+  .lc-phase h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .lc-phase .hooks-list { display: flex; flex-direction: column; gap: 6px; }
+  .hook-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border-radius: 8px; padding: 8px 14px;
+    font-size: 0.8rem; border: 1px solid var(--border);
+  }
+  .hook-item .event { font-weight: 700; color: var(--accent); min-width: 110px; }
+  .hook-item .desc { color: var(--text-dim); }
+
+  .lc-arrow {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 4px 0;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+  }
+  .lc-arrow .arr { font-size: 1.2rem; }
+
+  /* ========== Section 6: Memory ========== */
+  .memory-visual {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .memory-scope {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    width: 300px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .memory-scope:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .memory-scope .icon { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+  .memory-scope h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+  .memory-scope .path { font-family: monospace; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px; word-break: break-all; }
+  .memory-scope .desc { font-size: 0.82rem; color: var(--text-dim); line-height: 1.5; }
+  .memory-scope .rec { display: inline-block; margin-top: 10px; padding: 3px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; }
+
+  .memory-how {
+    margin-top: 32px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .memory-how h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; }
+  .memory-how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .memory-how-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  .memory-how-item .num { font-size: 1.4rem; font-weight: 900; margin-bottom: 6px; display: block; }
+
+  /* ========== Section 7: Patterns ========== */
+  .patterns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 24px;
+  }
+
+  .pattern-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .pattern-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .pattern-header {
+    padding: 20px 24px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pattern-header .emoji { font-size: 2rem; }
+  .pattern-header h3 { font-size: 1.05rem; font-weight: 700; }
+  .pattern-body { padding: 0 24px 20px; }
+  .pattern-body p { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 12px; line-height: 1.5; }
+  .pattern-example {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .pattern-example .prompt { color: var(--accent); }
+
+  .pattern-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-right: 4px;
+  }
+
+  /* ========== Section 8: Decision Tree ========== */
+  .decision-tree {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .dt-node {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 24px;
+    text-align: center;
+    min-width: 300px;
+    max-width: 500px;
+    transition: border-color 0.3s;
+  }
+  .dt-node:hover { border-color: var(--accent); }
+  .dt-node.question {
+    background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(129,140,248,0.08));
+    border-color: var(--accent);
+  }
+  .dt-node.answer {
+    border-radius: 20px;
+    font-weight: 700;
+  }
+  .dt-node h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+  .dt-node p { font-size: 0.82rem; color: var(--text-dim); }
+
+  .dt-branch {
+    display: flex;
+    gap: 80px;
+    justify-content: center;
+    position: relative;
+  }
+  .dt-branch::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: calc(50% - 40px);
+    width: calc(80px);
+    height: 1px;
+    background: var(--border);
+  }
+
+  .dt-branch-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .dt-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 0;
+  }
+  .dt-arrow .line { width: 2px; height: 16px; background: var(--border); }
+  .dt-arrow .label {
+    font-size: 0.72rem;
+    padding: 2px 10px;
+    border-radius: 8px;
+    font-weight: 700;
+  }
+  .dt-arrow .yes { background: var(--green-bg); color: var(--green); }
+  .dt-arrow .no { background: var(--red-bg); color: var(--red); }
+
+  /* ========== Section 9: Frontmatter Anatomy ========== */
+  .anatomy-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .anatomy-code {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .anatomy-code-header {
+    background: var(--surface2);
+    padding: 12px 18px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .anatomy-code-header .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .anatomy-code-body {
+    padding: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 2;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .hl-key { color: var(--purple); }
+  .hl-val { color: var(--green); }
+  .hl-sep { color: var(--text-muted); }
+  .hl-comment { color: var(--text-muted); font-style: italic; }
+  .hl-tag { color: var(--yellow); }
+  .hl-str { color: var(--cyan); }
+
+  .anatomy-annotations {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .anno-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: border-color 0.3s;
+    cursor: default;
+  }
+  .anno-item:hover { border-color: var(--accent); }
+  .anno-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .anno-body h4 { font-size: 0.85rem; font-weight: 700; margin-bottom: 2px; }
+  .anno-body p { font-size: 0.78rem; color: var(--text-dim); line-height: 1.4; }
+
+  /* ========== Section 10: Constraints ========== */
+  .constraints-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .constraint-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    gap: 14px;
+    transition: border-color 0.3s;
+  }
+  .constraint-card:hover { border-color: var(--red); }
+  .constraint-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--red-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+  .constraint-body h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+  .constraint-body p { font-size: 0.8rem; color: var(--text-dim); line-height: 1.4; }
+
+  /* Foreground/Background comparison */
+  .fg-bg-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 900px;
+    margin: 0 auto 32px;
+  }
+  .fg-bg-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: border-color 0.3s;
+  }
+  .fg-bg-card:hover { border-color: var(--accent); }
+  .fg-bg-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .fg-bg-card ul { list-style: none; }
+  .fg-bg-card li { font-size: 0.82rem; color: var(--text-dim); padding: 6px 0; display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; border-bottom: 1px solid rgba(42,51,88,0.5); }
+  .fg-bg-card li:last-child { border-bottom: none; }
+  .fg-bg-card li .bullet { flex-shrink: 0; margin-top: 2px; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 32px 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .header h1 { font-size: 1.6rem; }
+    .anatomy-container, .tools-grid, .fg-bg-compare { grid-template-columns: 1fr; }
+    .flow-step { flex-direction: column; }
+    .flow-step-visual { width: 100%; }
+    .scope-layer { flex-direction: column; }
+    .scope-priority { width: 100%; padding: 12px; }
+    .scope-indicator { width: 100%; padding: 8px; border-left: none; border-top: 1px solid var(--border); }
+    .dt-branch { flex-direction: column; gap: 16px; }
+    .dt-branch::before { display: none; }
+    .patterns-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>Claude Code Sub-agents</h1>
+  <p>독립된 컨텍스트 + 제한된 도구 + 전문 프롬프트 = 안전한 작업 위임</p>
+</div>
+
+<!-- Navigation -->
+<div class="nav" id="nav">
+  <button class="nav-btn active" data-section="architecture">Architecture</button>
+  <button class="nav-btn" data-section="context-flow">Context Flow</button>
+  <button class="nav-btn" data-section="scope">Scope & Priority</button>
+  <button class="nav-btn" data-section="anatomy">Frontmatter</button>
+  <button class="nav-btn" data-section="tools">Tools Control</button>
+  <button class="nav-btn" data-section="lifecycle">Lifecycle</button>
+  <button class="nav-btn" data-section="memory">Memory</button>
+  <button class="nav-btn" data-section="fg-bg">FG / BG</button>
+  <button class="nav-btn" data-section="patterns">Patterns</button>
+  <button class="nav-btn" data-section="decision">Decision</button>
+  <button class="nav-btn" data-section="constraints">Constraints</button>
+</div>
+
+<!-- ========== Section 1: Architecture ========== -->
+<div class="section active" id="architecture">
+  <div class="section-title"><span class="icon">&#9711;</span> Architecture Overview</div>
+  <div class="section-desc">Claude가 작업을 만나면 description을 기반으로 적합한 서브에이전트에 위임합니다. 각 에이전트는 독립 컨텍스트에서 실행됩니다.</div>
+
+  <div class="arch-container">
+    <!-- Main conversation -->
+    <div class="arch-main">
+      <div class="label">Main Conversation</div>
+      <div class="name">Claude</div>
+      <div class="desc">사용자와 대화하는 메인 세션<br>모든 도구 + 전체 시스템 프롬프트</div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="arch-arrow-down">
+      <div class="line"></div>
+      <div class="label">description 매칭 시 위임 (delegate)</div>
+      <div class="line"></div>
+    </div>
+
+    <!-- Built-in agents -->
+    <div class="arch-sep">
+      <div class="line"></div>
+      <div class="label">Built-in Sub-agents</div>
+      <div class="line"></div>
+    </div>
+
+    <div class="arch-agents-row">
+      <div class="arch-agent" style="border-left: 3px solid var(--green);">
+        <span class="emoji">&#128269;</span>
+        <div class="name">Explore</div>
+        <span class="model-badge badge-haiku">Haiku</span>
+        <div class="tools">Read-only (Write/Edit 차단)</div>
+      </div>
+      <div class="arch-agent" style="border-left: 3px solid var(--blue);">
+        <span class="emoji">&#128203;</span>
+        <div class="name">Plan</div>
+        <span class="model-badge badge-inherit">Inherit</span>
+        <div class="tools">Read-only (Write/Edit 차단)</div>
+      </div>
+      <div class="arch-agent" style="border-left: 3px solid var(--purple);">
+        <span class="emoji">&#9881;&#65039;</span>
+        <div class="name">General-purpose</div>
+        <span class="model-badge badge-inherit">Inherit</span>
+        <div class="tools">All tools</div>
+      </div>
+    </div>
+
+    <div class="arch-sep">
+      <div class="line"></div>
+      <div class="label">Custom Sub-agents (you create)</div>
+      <div class="line"></div>
+    </div>
+
+    <div class="arch-agents-row">
+      <div class="arch-agent" style="border-left: 3px solid var(--cyan); border-style: dashed;">
+        <span class="emoji">&#128270;</span>
+        <div class="name">Code Reviewer</div>
+        <span class="model-badge badge-sonnet">Sonnet</span>
+        <div class="tools">Read, Grep, Glob, Bash</div>
+      </div>
+      <div class="arch-agent" style="border-left: 3px solid var(--orange); border-style: dashed;">
+        <span class="emoji">&#128027;</span>
+        <div class="name">Debugger</div>
+        <span class="model-badge badge-inherit">Inherit</span>
+        <div class="tools">Read, Edit, Bash, Grep, Glob</div>
+      </div>
+      <div class="arch-agent" style="border-left: 3px solid var(--pink); border-style: dashed;">
+        <span class="emoji">&#128202;</span>
+        <div class="name">Data Scientist</div>
+        <span class="model-badge badge-sonnet">Sonnet</span>
+        <div class="tools">Bash, Read, Write</div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="arch-legend">
+      <div class="arch-legend-item"><div class="arch-legend-dot" style="background:var(--green);"></div> Haiku (빠름/저렴)</div>
+      <div class="arch-legend-item"><div class="arch-legend-dot" style="background:var(--blue);"></div> Inherit (메인 모델)</div>
+      <div class="arch-legend-item"><div class="arch-legend-dot" style="background:var(--purple);"></div> Sonnet (균형)</div>
+      <div class="arch-legend-item"><div class="arch-legend-dot" style="background:var(--orange);"></div> Opus (최고 성능)</div>
+      <div class="arch-legend-item" style="border-left: 1px solid var(--border); padding-left: 16px;">
+        <span style="border: 2px solid var(--text-muted); border-style: dashed; width: 16px; height: 16px; display: inline-block; border-radius: 3px;"></span>
+        Custom (사용자 정의)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Section 2: Context Flow ========== -->
+<div class="section" id="context-flow">
+  <div class="section-title"><span class="icon">&#8594;</span> Context Flow</div>
+  <div class="section-desc">서브에이전트가 생성되고 작업을 수행하고 결과를 반환하는 전체 흐름입니다.</div>
+
+  <div class="flow-container">
+    <!-- Step 1 -->
+    <div class="flow-step">
+      <div class="flow-step-num">
+        <div class="circle" style="background:var(--accent); color:var(--bg);">1</div>
+        <div class="vline"></div>
+      </div>
+      <div class="flow-step-content">
+        <h3>사용자 요청 수신</h3>
+        <p>사용자가 메인 대화에서 작업을 요청합니다. Claude는 등록된 서브에이전트들의 <strong>description</strong> 필드를 확인하여 매칭되는 에이전트를 찾습니다.</p>
+      </div>
+      <div class="flow-step-visual">
+        <div class="flow-visual-box">
+<span class="hl">User:</span> "코드 리뷰 해줘"
+<span class="dim">     ↓ description 매칭</span>
+<span class="hl2">Match:</span> code-reviewer
+<span class="dim">  "Reviews code for quality"</span></div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="flow-step">
+      <div class="flow-step-num">
+        <div class="circle" style="background:var(--purple); color:var(--bg);">2</div>
+        <div class="vline"></div>
+      </div>
+      <div class="flow-step-content">
+        <h3>독립 컨텍스트 생성</h3>
+        <p>새로운 컨텍스트 윈도우가 생성됩니다. 서브에이전트는 자신의 <strong>시스템 프롬프트(Markdown body)만</strong> 받습니다. Claude Code의 전체 시스템 프롬프트는 전달되지 않습니다.</p>
+      </div>
+      <div class="flow-step-visual">
+        <div class="flow-visual-box">
+<span class="hl3">Context Window (New)</span>
+<span class="dim">├─</span> <span class="hl">System:</span> SKILL.md body
+<span class="dim">├─</span> <span class="hl">Tools:</span> Read, Grep, Glob
+<span class="dim">├─</span> <span class="hl">Model:</span> sonnet
+<span class="dim">└─</span> <span class="hl">Env:</span> working dir, OS</div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="flow-step">
+      <div class="flow-step-num">
+        <div class="circle" style="background:var(--green); color:var(--bg);">3</div>
+        <div class="vline"></div>
+      </div>
+      <div class="flow-step-content">
+        <h3>독립 실행</h3>
+        <p>서브에이전트가 허용된 도구만 사용하여 작업을 수행합니다. 메인 대화의 컨텍스트를 오염시키지 않습니다. <strong>서브에이전트는 다른 서브에이전트를 스폰할 수 없습니다.</strong></p>
+      </div>
+      <div class="flow-step-visual">
+        <div class="flow-visual-box">
+<span class="hl3">Sub-agent working...</span>
+<span class="dim">  → git diff (Bash)</span>
+<span class="dim">  → Read modified files</span>
+<span class="dim">  → Grep for patterns</span>
+<span class="dim">  → Analyze & summarize</span>
+<span class="dim">  ✗ Cannot spawn agents</span></div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="flow-step">
+      <div class="flow-step-num">
+        <div class="circle" style="background:var(--yellow); color:var(--bg);">4</div>
+        <div class="vline"></div>
+      </div>
+      <div class="flow-step-content">
+        <h3>결과 반환</h3>
+        <p>서브에이전트가 완료되면 <strong>요약 결과만</strong> 메인 대화에 반환됩니다. 상세 도구 호출 결과는 서브에이전트의 독립 트랜스크립트에만 저장됩니다. Agent ID가 반환되어 나중에 재개(resume)할 수 있습니다.</p>
+      </div>
+      <div class="flow-step-visual">
+        <div class="flow-visual-box">
+<span class="hl">Main Context</span> ← <span class="hl3">Summary</span>
+<span class="dim">  "3 critical issues found"</span>
+<span class="dim">  "2 warnings, 1 suggestion"</span>
+
+<span class="hl2">Agent ID:</span> agent-abc123
+<span class="dim">  → Resume 가능</span></div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="flow-step">
+      <div class="flow-step-num">
+        <div class="circle" style="background:var(--orange); color:var(--bg);">5</div>
+      </div>
+      <div class="flow-step-content">
+        <h3>트랜스크립트 저장</h3>
+        <p>서브에이전트의 전체 대화 이력은 <code>~/.claude/projects/{project}/{session}/subagents/agent-{id}.jsonl</code>에 저장됩니다. 메인 대화 압축과 독립적이며, 기본 30일 후 자동 정리됩니다.</p>
+      </div>
+      <div class="flow-step-visual">
+        <div class="flow-visual-box">
+<span class="hl3">Transcript File</span>
+<span class="dim">~/.claude/projects/</span>
+<span class="dim">  {project}/{session}/</span>
+<span class="dim">    subagents/</span>
+<span class="dim">      agent-abc123.jsonl</span>
+<span class="dim">  ← 독립 저장, 30일 유지</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Section 3: Scope & Priority ========== -->
+<div class="section" id="scope">
+  <div class="section-title"><span class="icon">&#128194;</span> Scope & Priority</div>
+  <div class="section-desc">동일한 이름의 서브에이전트가 여러 위치에 있으면, 우선순위가 높은 쪽이 승리합니다.</div>
+
+  <div class="scope-stack">
+    <div class="scope-layer" style="background: linear-gradient(90deg, rgba(248,113,113,0.06), transparent);">
+      <div class="scope-priority" style="color: var(--red);">1</div>
+      <div class="scope-info">
+        <h3><span style="color:var(--red);">&#9889;</span> --agents CLI Flag</h3>
+        <div class="path">claude --agents '{ "name": { ... } }'</div>
+        <div class="desc">현재 세션에서만 유효. 디스크에 저장되지 않음. 테스트나 자동화 스크립트용.</div>
+      </div>
+      <div class="scope-indicator">
+        <span class="scope-badge" style="background:var(--red-bg); color:var(--red);">Session Only</span>
+      </div>
+    </div>
+
+    <div class="scope-layer" style="background: linear-gradient(90deg, rgba(251,191,36,0.06), transparent);">
+      <div class="scope-priority" style="color: var(--yellow);">2</div>
+      <div class="scope-info">
+        <h3><span style="color:var(--yellow);">&#128193;</span> .claude/agents/</h3>
+        <div class="path">{project}/.claude/agents/my-agent.md</div>
+        <div class="desc">현재 프로젝트 전용. 버전 관리에 체크인하여 팀과 공유 가능. 가장 많이 사용됨.</div>
+      </div>
+      <div class="scope-indicator">
+        <span class="scope-badge" style="background:var(--yellow-bg); color:var(--yellow);">Project</span>
+      </div>
+    </div>
+
+    <div class="scope-layer" style="background: linear-gradient(90deg, rgba(96,165,250,0.06), transparent);">
+      <div class="scope-priority" style="color: var(--blue);">3</div>
+      <div class="scope-info">
+        <h3><span style="color:var(--blue);">&#127968;</span> ~/.claude/agents/</h3>
+        <div class="path">~/.claude/agents/my-agent.md</div>
+        <div class="desc">모든 프로젝트에서 사용 가능한 개인 전역 서브에이전트.</div>
+      </div>
+      <div class="scope-indicator">
+        <span class="scope-badge" style="background:var(--blue-bg); color:var(--blue);">User Global</span>
+      </div>
+    </div>
+
+    <div class="scope-layer" style="background: linear-gradient(90deg, rgba(74,222,128,0.06), transparent);">
+      <div class="scope-priority" style="color: var(--green);">4</div>
+      <div class="scope-info">
+        <h3><span style="color:var(--green);">&#128268;</span> Plugin agents/</h3>
+        <div class="path">{plugin}/agents/my-agent.md</div>
+        <div class="desc">플러그인 설치 시 자동 제공. 플러그인이 활성화된 프로젝트에서만 사용 가능.</div>
+      </div>
+      <div class="scope-indicator">
+        <span class="scope-badge" style="background:var(--green-bg); color:var(--green);">Plugin</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="priority-bar">
+    <div class="label" style="color:var(--red);">&#9650; 높은 우선순위</div>
+    <div class="arrow"></div>
+    <div class="label" style="color:var(--green);">낮은 우선순위 &#9660;</div>
+  </div>
+</div>
+
+<!-- ========== Section 4: Frontmatter Anatomy ========== -->
+<div class="section" id="anatomy">
+  <div class="section-title"><span class="icon">&#128196;</span> Frontmatter Anatomy</div>
+  <div class="section-desc">서브에이전트 정의 파일의 구조와 각 필드의 역할을 시각적으로 분석합니다.</div>
+
+  <div class="anatomy-container">
+    <div class="anatomy-code">
+      <div class="anatomy-code-header">
+        <div class="dot" style="background:#f87171;"></div>
+        <div class="dot" style="background:#fbbf24;"></div>
+        <div class="dot" style="background:#4ade80;"></div>
+        <span>code-reviewer.md</span>
+      </div>
+      <div class="anatomy-code-body"><span class="hl-sep">---</span>
+<span class="hl-key">name</span><span class="hl-sep">:</span> <span class="hl-val">code-reviewer</span>
+<span class="hl-key">description</span><span class="hl-sep">:</span> <span class="hl-val">Reviews code for quality</span>
+<span class="hl-key">tools</span><span class="hl-sep">:</span> <span class="hl-val">Read, Grep, Glob, Bash</span>
+<span class="hl-key">disallowedTools</span><span class="hl-sep">:</span> <span class="hl-val">Write, Edit</span>
+<span class="hl-key">model</span><span class="hl-sep">:</span> <span class="hl-val">sonnet</span>
+<span class="hl-key">permissionMode</span><span class="hl-sep">:</span> <span class="hl-val">default</span>
+<span class="hl-key">maxTurns</span><span class="hl-sep">:</span> <span class="hl-val">20</span>
+<span class="hl-key">memory</span><span class="hl-sep">:</span> <span class="hl-val">user</span>
+<span class="hl-key">background</span><span class="hl-sep">:</span> <span class="hl-val">false</span>
+<span class="hl-key">isolation</span><span class="hl-sep">:</span> <span class="hl-val">worktree</span>
+<span class="hl-key">skills</span><span class="hl-sep">:</span>
+  <span class="hl-sep">-</span> <span class="hl-val">api-conventions</span>
+<span class="hl-key">hooks</span><span class="hl-sep">:</span>
+  <span class="hl-tag">PreToolUse</span><span class="hl-sep">:</span>
+    <span class="hl-sep">-</span> <span class="hl-key">matcher</span><span class="hl-sep">:</span> <span class="hl-str">"Bash"</span>
+      <span class="hl-key">hooks</span><span class="hl-sep">:</span>
+        <span class="hl-sep">-</span> <span class="hl-key">type</span><span class="hl-sep">:</span> <span class="hl-val">command</span>
+          <span class="hl-key">command</span><span class="hl-sep">:</span> <span class="hl-str">"./validate.sh"</span>
+<span class="hl-sep">---</span>
+
+<span class="hl-comment"># System Prompt (Markdown body)</span>
+<span class="hl-tag">You are a senior code reviewer...</span></div>
+    </div>
+
+    <div class="anatomy-annotations">
+      <div class="anno-item" style="border-left: 3px solid var(--red);">
+        <div class="anno-icon" style="background:var(--red-bg); color:var(--red);">*</div>
+        <div class="anno-body">
+          <h4>name (필수)</h4>
+          <p>고유 식별자. 소문자 + 하이픈만 사용. 동일 이름 시 우선순위 높은 쪽이 승리.</p>
+        </div>
+      </div>
+      <div class="anno-item" style="border-left: 3px solid var(--red);">
+        <div class="anno-icon" style="background:var(--red-bg); color:var(--red);">*</div>
+        <div class="anno-body">
+          <h4>description (필수)</h4>
+          <p>Claude가 위임 시점을 판단하는 핵심. "use proactively" 포함 시 자동 위임 강화.</p>
+        </div>
+      </div>
+      <div class="anno-item" style="border-left: 3px solid var(--green);">
+        <div class="anno-icon" style="background:var(--green-bg); color:var(--green);">T</div>
+        <div class="anno-body">
+          <h4>tools / disallowedTools</h4>
+          <p>허용 목록(allowlist) 또는 거부 목록(denylist). 생략 시 모든 도구 상속.</p>
+        </div>
+      </div>
+      <div class="anno-item" style="border-left: 3px solid var(--purple);">
+        <div class="anno-icon" style="background:var(--purple-bg); color:var(--purple);">M</div>
+        <div class="anno-body">
+          <h4>model</h4>
+          <p>haiku(빠름/저렴), sonnet(균형), opus(최고성능), inherit(부모 모델). 기본: inherit.</p>
+        </div>
+      </div>
+      <div class="anno-item" style="border-left: 3px solid var(--yellow);">
+        <div class="anno-icon" style="background:var(--yellow-bg); color:var(--yellow);">P</div>
+        <div class="anno-body">
+          <h4>permissionMode</h4>
+          <p>default, acceptEdits, dontAsk, bypassPermissions, plan. 부모가 bypass면 오버라이드 불가.</p>
+        </div>
+      </div>
+      <div class="anno-item" style="border-left: 3px solid var(--cyan);">
+        <div class="anno-icon" style="background:var(--cyan-bg); color:var(--cyan);">&#9881;</div>
+        <div class="anno-body">
+          <h4>memory / skills / hooks / isolation</h4>
+          <p>영속 메모리(user/project/local), 스킬 프리로드, 라이프사이클 훅, worktree 격리.</p>
+        </div>
+      </div>
+      <div class="anno-item" style="border-left: 3px solid var(--orange);">
+        <div class="anno-icon" style="background:var(--orange-bg); color:var(--orange);">&#9997;</div>
+        <div class="anno-body">
+          <h4>Markdown Body (시스템 프롬프트)</h4>
+          <p>서브에이전트가 받는 유일한 프롬프트. Claude Code 전체 시스템 프롬프트는 전달 안 됨.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Section 5: Tools Control ========== -->
+<div class="section" id="tools">
+  <div class="section-title"><span class="icon">&#128295;</span> Tools Control</div>
+  <div class="section-desc">서브에이전트의 도구 접근을 허용 목록, 거부 목록, Agent 스폰 제한으로 세밀하게 제어합니다.</div>
+
+  <div class="tools-grid">
+    <div class="tool-card">
+      <h3><span style="color:var(--green);">&#10003;</span> Allowlist (tools)</h3>
+      <div class="code-block">
+<span class="hl-key">tools</span><span class="hl-sep">:</span> <span class="hl-val">Read, Grep, Glob, Bash</span>
+<span class="hl-comment"># 이 도구만 사용 가능</span>
+<span class="hl-comment"># 생략 시 모든 도구 상속</span></div>
+      <div class="note">명시된 도구만 허용합니다. <strong>생략하면 부모의 모든 도구를 상속</strong>합니다.</div>
+    </div>
+
+    <div class="tool-card">
+      <h3><span style="color:var(--red);">&#10007;</span> Denylist (disallowedTools)</h3>
+      <div class="code-block">
+<span class="hl-key">disallowedTools</span><span class="hl-sep">:</span> <span class="hl-val">Write, Edit</span>
+<span class="hl-comment"># 이 도구를 제외</span>
+<span class="hl-comment"># tools에서 또는 상속에서 제거</span></div>
+      <div class="note">허용 목록이나 상속된 도구에서 <strong>특정 도구를 명시적으로 제거</strong>합니다.</div>
+    </div>
+
+    <div class="tool-card">
+      <h3><span style="color:var(--cyan);">&#128101;</span> Agent 스폰 제한</h3>
+      <div class="code-block">
+<span class="hl-comment"># 특정 에이전트만 스폰 가능</span>
+<span class="hl-key">tools</span><span class="hl-sep">:</span> <span class="hl-val">Agent(worker, researcher)</span>
+
+<span class="hl-comment"># 모든 에이전트 스폰 가능</span>
+<span class="hl-key">tools</span><span class="hl-sep">:</span> <span class="hl-val">Agent</span>
+
+<span class="hl-comment"># Agent 생략 → 스폰 불가</span></div>
+      <div class="note"><strong>--agent로 실행하는 메인 에이전트에만</strong> 적용. 서브에이전트는 다른 서브에이전트 스폰 불가.</div>
+    </div>
+
+    <div class="tool-card">
+      <h3><span style="color:var(--red);">&#128683;</span> 특정 에이전트 비활성화</h3>
+      <div class="code-block">
+<span class="hl-comment">// settings.json</span>
+{
+  "<span class="hl-key">permissions</span>": {
+    "<span class="hl-key">deny</span>": [
+      "<span class="hl-val">Agent(Explore)</span>",
+      "<span class="hl-val">Agent(my-custom)</span>"
+    ]
+  }
+}</div>
+      <div class="note"><strong>permissions.deny</strong>로 빌트인/커스텀 에이전트를 비활성화합니다.</div>
+    </div>
+  </div>
+
+  <div class="tool-matrix">
+    <h3 style="font-size: 1.05rem; margin: 32px 0 16px;">Built-in 에이전트별 도구 접근 매트릭스</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>에이전트</th>
+          <th>Read</th>
+          <th>Grep/Glob</th>
+          <th>Bash</th>
+          <th>Write</th>
+          <th>Edit</th>
+          <th>Agent (스폰)</th>
+          <th>Model</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Explore</strong></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-deny">&#10007;</span></td>
+          <td><span class="tool-deny">&#10007;</span></td>
+          <td><span class="tool-deny">&#10007;</span></td>
+          <td><span class="tool-inherit">Haiku</span></td>
+        </tr>
+        <tr>
+          <td><strong>Plan</strong></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-deny">&#10007;</span></td>
+          <td><span class="tool-deny">&#10007;</span></td>
+          <td><span class="tool-deny">&#10007;</span></td>
+          <td><span class="tool-inherit">Inherit</span></td>
+        </tr>
+        <tr>
+          <td><strong>General-purpose</strong></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-check">&#10003;</span></td>
+          <td><span class="tool-deny">&#10007;</span></td>
+          <td><span class="tool-inherit">Inherit</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== Section 6: Lifecycle ========== -->
+<div class="section" id="lifecycle">
+  <div class="section-title"><span class="icon">&#128260;</span> Lifecycle & Hooks</div>
+  <div class="section-desc">서브에이전트의 라이프사이클 이벤트와 훅을 통한 세밀한 제어 흐름입니다.</div>
+
+  <div class="lifecycle-diagram">
+    <!-- Phase: Start -->
+    <div class="lc-phase" style="border-left: 3px solid var(--green);">
+      <h3><span style="color:var(--green);">&#9654;</span> Start Phase</h3>
+      <div class="hooks-list">
+        <div class="hook-item">
+          <span class="event">SubagentStart</span>
+          <span class="desc">settings.json에서 정의. 메인 세션에서 실행. matcher로 특정 에이전트 타겟팅.</span>
+        </div>
+        <div class="hook-item">
+          <span class="event">skills 로드</span>
+          <span class="desc">frontmatter의 skills 필드 → 전체 스킬 내용을 컨텍스트에 주입.</span>
+        </div>
+        <div class="hook-item">
+          <span class="event">memory 로드</span>
+          <span class="desc">memory 필드 → MEMORY.md 첫 200줄을 컨텍스트에 포함.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lc-arrow"><span class="arr">&#9660;</span></div>
+
+    <!-- Phase: Execution -->
+    <div class="lc-phase" style="border-left: 3px solid var(--accent);">
+      <h3><span style="color:var(--accent);">&#9881;</span> Execution Phase (반복)</h3>
+      <div class="hooks-list">
+        <div class="hook-item">
+          <span class="event" style="color:var(--yellow);">PreToolUse</span>
+          <span class="desc">도구 실행 전. matcher로 특정 도구 타겟. exit 2 → 실행 차단.</span>
+        </div>
+        <div class="hook-item">
+          <span class="event" style="color:var(--green);">Tool 실행</span>
+          <span class="desc">허용된 도구만 실행. 제한된 도구 호출 시 거부.</span>
+        </div>
+        <div class="hook-item">
+          <span class="event" style="color:var(--purple);">PostToolUse</span>
+          <span class="desc">도구 실행 후. 린터 실행, 로깅 등에 활용.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lc-arrow"><span class="arr">&#9660;</span> <span style="font-size:0.72rem;">maxTurns 도달 또는 작업 완료</span></div>
+
+    <!-- Phase: Auto-compact -->
+    <div class="lc-phase" style="border-left: 3px solid var(--orange);">
+      <h3><span style="color:var(--orange);">&#128230;</span> Auto-compaction (필요 시)</h3>
+      <div class="hooks-list">
+        <div class="hook-item">
+          <span class="event">~95% 용량</span>
+          <span class="desc">자동 압축 트리거. CLAUDE_AUTOCOMPACT_PCT_OVERRIDE로 조기 설정 가능.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lc-arrow"><span class="arr">&#9660;</span></div>
+
+    <!-- Phase: Stop -->
+    <div class="lc-phase" style="border-left: 3px solid var(--red);">
+      <h3><span style="color:var(--red);">&#9632;</span> Stop Phase</h3>
+      <div class="hooks-list">
+        <div class="hook-item">
+          <span class="event">Stop (fm)</span>
+          <span class="desc">frontmatter의 Stop 훅 → 런타임에서 SubagentStop으로 변환.</span>
+        </div>
+        <div class="hook-item">
+          <span class="event">SubagentStop</span>
+          <span class="desc">settings.json에서 정의. 메인 세션에서 실행. 정리 작업(cleanup)에 활용.</span>
+        </div>
+        <div class="hook-item">
+          <span class="event">결과 반환</span>
+          <span class="desc">요약 + Agent ID를 메인 대화에 반환. 트랜스크립트는 .jsonl로 저장.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Section 7: Memory ========== -->
+<div class="section" id="memory">
+  <div class="section-title"><span class="icon">&#129504;</span> Persistent Memory</div>
+  <div class="section-desc">서브에이전트가 대화를 넘어서 지식을 축적하고, 시간이 지날수록 더 똑똑해지는 메커니즘입니다.</div>
+
+  <div class="memory-visual">
+    <div class="memory-scope" style="border-left: 3px solid var(--blue);">
+      <span class="icon">&#127758;</span>
+      <h3>user</h3>
+      <div class="path">~/.claude/agent-memory/&lt;name&gt;/</div>
+      <div class="desc">모든 프로젝트에서 기억을 유지합니다. 프로젝트를 넘나들며 축적된 패턴과 인사이트를 활용할 수 있습니다.</div>
+      <span class="rec" style="background:var(--green-bg); color:var(--green);">&#11088; 권장 기본값</span>
+    </div>
+
+    <div class="memory-scope" style="border-left: 3px solid var(--yellow);">
+      <span class="icon">&#128193;</span>
+      <h3>project</h3>
+      <div class="path">.claude/agent-memory/&lt;name&gt;/</div>
+      <div class="desc">프로젝트에 특화된 지식을 저장합니다. 버전 관리에 포함되어 팀원과 공유할 수 있습니다.</div>
+      <span class="rec" style="background:var(--yellow-bg); color:var(--yellow);">팀 공유 가능</span>
+    </div>
+
+    <div class="memory-scope" style="border-left: 3px solid var(--text-muted);">
+      <span class="icon">&#128274;</span>
+      <h3>local</h3>
+      <div class="path">.claude/agent-memory-local/&lt;name&gt;/</div>
+      <div class="desc">프로젝트 특화 + 개인 전용. 버전 관리에서 제외되므로 민감한 메모나 로컬 설정에 적합합니다.</div>
+      <span class="rec" style="background:rgba(90,99,128,0.15); color:var(--text-muted);">Private</span>
+    </div>
+  </div>
+
+  <div class="memory-how">
+    <h3>&#9881; Memory 활성화 시 자동 동작</h3>
+    <div class="memory-how-grid">
+      <div class="memory-how-item">
+        <span class="num" style="color:var(--accent);">1</span>
+        <strong>시스템 프롬프트에 주입</strong><br>
+        메모리 읽기/쓰기 지시가 자동으로 추가됩니다.
+      </div>
+      <div class="memory-how-item">
+        <span class="num" style="color:var(--purple);">2</span>
+        <strong>MEMORY.md 자동 로드</strong><br>
+        첫 200줄이 컨텍스트에 포함됩니다. 200줄 초과 시 큐레이션 지시.
+      </div>
+      <div class="memory-how-item">
+        <span class="num" style="color:var(--green);">3</span>
+        <strong>도구 자동 활성화</strong><br>
+        Read, Write, Edit 도구가 자동으로 활성화되어 메모리를 관리합니다.
+      </div>
+      <div class="memory-how-item">
+        <span class="num" style="color:var(--yellow);">4</span>
+        <strong>지식 축적</strong><br>
+        패턴, 아키텍처 결정, 디버깅 인사이트를 대화를 넘어 보존합니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Section 8: FG / BG ========== -->
+<div class="section" id="fg-bg">
+  <div class="section-title"><span class="icon">&#9654;&#9646;</span> Foreground vs Background</div>
+  <div class="section-desc">서브에이전트는 포그라운드(차단) 또는 백그라운드(동시) 모드로 실행할 수 있습니다.</div>
+
+  <div class="fg-bg-compare">
+    <div class="fg-bg-card" style="border-top: 3px solid var(--accent);">
+      <h3><span style="color:var(--accent);">&#9654;</span> Foreground (기본)</h3>
+      <ul>
+        <li><span class="bullet" style="color:var(--accent);">&#9679;</span>메인 대화가 <strong>차단</strong>됨 (완료까지 대기)</li>
+        <li><span class="bullet" style="color:var(--accent);">&#9679;</span>권한 프롬프트가 <strong>실시간</strong>으로 사용자에게 전달</li>
+        <li><span class="bullet" style="color:var(--accent);">&#9679;</span>AskUserQuestion으로 <strong>질문 가능</strong></li>
+        <li><span class="bullet" style="color:var(--accent);">&#9679;</span>결과를 기다려야 하는 작업에 적합</li>
+        <li><span class="bullet" style="color:var(--accent);">&#9679;</span>기본 동작 — 별도 설정 불필요</li>
+      </ul>
+    </div>
+
+    <div class="fg-bg-card" style="border-top: 3px solid var(--purple);">
+      <h3><span style="color:var(--purple);">&#9646;</span> Background</h3>
+      <ul>
+        <li><span class="bullet" style="color:var(--purple);">&#9679;</span>메인 대화 <strong>계속 진행</strong> 가능</li>
+        <li><span class="bullet" style="color:var(--purple);">&#9679;</span>시작 전 <strong>필요한 권한을 사전 승인</strong></li>
+        <li><span class="bullet" style="color:var(--purple);">&#9679;</span>미승인 권한은 <strong>자동 거부</strong></li>
+        <li><span class="bullet" style="color:var(--purple);">&#9679;</span>AskUserQuestion <strong>실패</strong> (하지만 계속 진행)</li>
+        <li><span class="bullet" style="color:var(--purple);">&#9679;</span>"백그라운드로 실행" 또는 <strong>Ctrl+B</strong></li>
+        <li><span class="bullet" style="color:var(--purple);">&#9679;</span><code>background: true</code>로 항상 백그라운드</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+    <div class="tool-card" style="border-color: var(--yellow); text-align: left;">
+      <h3><span style="color:var(--yellow);">&#128161;</span> 백그라운드 실패 시 복구</h3>
+      <div class="note" style="margin-bottom:0;">
+        백그라운드 서브에이전트가 권한 부족으로 실패하면, <strong>resume으로 포그라운드에서 재시도</strong>할 수 있습니다.<br><br>
+        "Continue that review" → Agent ID를 기반으로 이전 컨텍스트 전부 유지한 채 포그라운드에서 재개.<br><br>
+        <strong>비활성화:</strong> <code>CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Section 9: Patterns ========== -->
+<div class="section" id="patterns">
+  <div class="section-title"><span class="icon">&#128165;</span> Usage Patterns</div>
+  <div class="section-desc">서브에이전트를 효과적으로 활용하는 3가지 핵심 패턴과 실전 사례입니다.</div>
+
+  <div class="patterns-grid">
+    <div class="pattern-card">
+      <div class="pattern-header">
+        <span class="emoji">&#128230;</span>
+        <div>
+          <h3>Pattern 1: 대량 출력 격리</h3>
+          <span class="pattern-tag" style="background:var(--green-bg); color:var(--green);">컨텍스트 절약</span>
+        </div>
+      </div>
+      <div class="pattern-body">
+        <p>테스트 실행, 로그 분석, 문서 가져오기 같은 <strong>대량 출력</strong>을 서브에이전트에 격리합니다. 상세 결과는 서브에이전트 컨텍스트에만 남고, 요약만 반환됩니다.</p>
+        <div class="pattern-example">
+<span class="prompt">User:</span> "테스트 실행하고 실패한 것만 보고해"
+<span class="prompt">Claude:</span> → test-runner 서브에이전트에 위임
+<span class="prompt">Result:</span> "3개 실패: auth.test.ts:42, ..."
+<span style="color:var(--text-muted);">  (전체 테스트 로그는 서브에이전트에만 보존)</span></div>
+      </div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-header">
+        <span class="emoji">&#128640;</span>
+        <div>
+          <h3>Pattern 2: 병렬 리서치</h3>
+          <span class="pattern-tag" style="background:var(--cyan-bg); color:var(--cyan);">속도 향상</span>
+        </div>
+      </div>
+      <div class="pattern-body">
+        <p>독립적인 조사를 <strong>여러 서브에이전트가 동시에</strong> 수행합니다. 각각 독립 탐색 후 Claude가 결과를 종합합니다.</p>
+        <div class="pattern-example">
+<span class="prompt">User:</span> "인증, DB, API 모듈을 병렬로 분석해"
+<span class="prompt">Claude:</span> → 3개 서브에이전트 동시 스폰
+<span style="color:var(--text-muted);">  [auth-explorer] → 인증 모듈 분석</span>
+<span style="color:var(--text-muted);">  [db-explorer]   → DB 모듈 분석</span>
+<span style="color:var(--text-muted);">  [api-explorer]  → API 모듈 분석</span>
+<span class="prompt">Claude:</span> → 3개 결과 종합</div>
+        <p style="margin-top: 8px; font-size: 0.78rem; color: var(--yellow);">&#9888; 많은 서브에이전트 결과가 모두 반환되면 메인 컨텍스트 소비 주의. 지속적 병렬은 Agent Teams가 적합.</p>
+      </div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-header">
+        <span class="emoji">&#128279;</span>
+        <div>
+          <h3>Pattern 3: 체이닝</h3>
+          <span class="pattern-tag" style="background:var(--purple-bg); color:var(--purple);">순차 파이프라인</span>
+        </div>
+      </div>
+      <div class="pattern-body">
+        <p>여러 서브에이전트를 <strong>순차 실행</strong>하여 파이프라인을 구성합니다. 첫 번째 결과를 Claude가 다음 서브에이전트에 전달합니다.</p>
+        <div class="pattern-example">
+<span class="prompt">User:</span> "성능 문제 찾고 수정해줘"
+<span class="prompt">Step 1:</span> code-reviewer → 성능 이슈 탐지
+<span style="color:var(--text-muted);">  "3개 N+1 쿼리 발견"</span>
+<span class="prompt">Step 2:</span> optimizer → 이슈 수정 (컨텍스트 전달)
+<span style="color:var(--text-muted);">  "3개 쿼리 배치 처리로 변환 완료"</span></div>
+        <p style="margin-top: 8px; font-size: 0.78rem; color: var(--text-muted);">서브에이전트 중첩 불가 → 체이닝은 항상 메인 대화에서 조율.</p>
+      </div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-header">
+        <span class="emoji">&#128260;</span>
+        <div>
+          <h3>Pattern 4: Resume (재개)</h3>
+          <span class="pattern-tag" style="background:var(--orange-bg); color:var(--orange);">연속성</span>
+        </div>
+      </div>
+      <div class="pattern-body">
+        <p>완료된 서브에이전트를 <strong>이전 컨텍스트 전체를 유지</strong>한 채 재개합니다. 새 인스턴스를 시작하지 않고 이어서 작업합니다.</p>
+        <div class="pattern-example">
+<span class="prompt">User:</span> "인증 모듈 리뷰해줘"
+<span class="prompt">Agent:</span> → 리뷰 완료 (ID: abc123)
+
+<span class="prompt">User:</span> "그 리뷰 이어서 권한 로직도 분석해"
+<span class="prompt">Claude:</span> → agent-abc123 resume
+<span style="color:var(--text-muted);">  이전 도구 호출, 결과, 추론 모두 보존</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Section 10: Decision ========== -->
+<div class="section" id="decision">
+  <div class="section-title"><span class="icon">&#128208;</span> Decision Guide</div>
+  <div class="section-desc">메인 대화, 서브에이전트, Skills, Agent Teams 중 어떤 것을 선택할지 판단하는 의사결정 트리입니다.</div>
+
+  <div class="decision-tree">
+    <!-- Q1 -->
+    <div class="dt-node question">
+      <h4>작업에 빈번한 왕복/반복 정제가 필요한가?</h4>
+      <p>사용자와 여러 번 주고받으며 결과를 다듬어야 하는 경우</p>
+    </div>
+
+    <div style="display: flex; gap: 200px; justify-content: center;">
+      <div class="dt-branch-item">
+        <div class="dt-arrow">
+          <div class="line"></div>
+          <span class="label yes">YES</span>
+          <div class="line"></div>
+        </div>
+        <div class="dt-node answer" style="background: var(--accent-bg); border-color: var(--accent); background: rgba(56,189,248,0.1);">
+          <h4 style="color:var(--accent);">&#9654; Main Conversation</h4>
+          <p>직접 대화로 처리</p>
+        </div>
+      </div>
+
+      <div class="dt-branch-item">
+        <div class="dt-arrow">
+          <div class="line"></div>
+          <span class="label no">NO</span>
+          <div class="line"></div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="dt-node question">
+          <h4>재사용 가능한 워크플로우인가?</h4>
+          <p>같은 패턴을 여러 곳에서 반복 사용</p>
+        </div>
+
+        <div style="display: flex; gap: 160px; justify-content: center;">
+          <div class="dt-branch-item">
+            <div class="dt-arrow">
+              <div class="line"></div>
+              <span class="label yes">YES</span>
+              <div class="line"></div>
+            </div>
+            <div class="dt-node answer" style="border-color: var(--yellow); background: rgba(251,191,36,0.08);">
+              <h4 style="color:var(--yellow);">&#9733; Skills</h4>
+              <p>메인 컨텍스트에서 실행되는<br>재사용 프롬프트</p>
+            </div>
+          </div>
+
+          <div class="dt-branch-item">
+            <div class="dt-arrow">
+              <div class="line"></div>
+              <span class="label no">NO</span>
+              <div class="line"></div>
+            </div>
+
+            <!-- Q3 -->
+            <div class="dt-node question">
+              <h4>지속적 병렬 + 상호 통신 필요?</h4>
+              <p>여러 에이전트가 동시에 작업하며 소통</p>
+            </div>
+
+            <div style="display: flex; gap: 160px; justify-content: center;">
+              <div class="dt-branch-item">
+                <div class="dt-arrow">
+                  <div class="line"></div>
+                  <span class="label yes">YES</span>
+                  <div class="line"></div>
+                </div>
+                <div class="dt-node answer" style="border-color: var(--pink); background: rgba(244,114,182,0.08);">
+                  <h4 style="color:var(--pink);">&#128101; Agent Teams</h4>
+                  <p>별도 세션 간 조율<br>독립 컨텍스트</p>
+                </div>
+              </div>
+
+              <div class="dt-branch-item">
+                <div class="dt-arrow">
+                  <div class="line"></div>
+                  <span class="label no">NO</span>
+                  <div class="line"></div>
+                </div>
+                <div class="dt-node answer" style="border-color: var(--green); background: rgba(74,222,128,0.08);">
+                  <h4 style="color:var(--green);">&#9881; Sub-agent</h4>
+                  <p>독립 컨텍스트에서<br>작업 위임 + 요약 반환</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick comparison table -->
+  <div style="max-width: 900px; margin: 48px auto 0;">
+    <div class="tool-matrix">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Main Conversation</th>
+            <th>Sub-agent</th>
+            <th>Skills</th>
+            <th>Agent Teams</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>컨텍스트</strong></td>
+            <td>공유</td>
+            <td>독립 (격리)</td>
+            <td>메인에서 실행</td>
+            <td>각자 독립</td>
+          </tr>
+          <tr>
+            <td><strong>도구 제한</strong></td>
+            <td>전체</td>
+            <td>커스텀 가능</td>
+            <td>전체</td>
+            <td>커스텀 가능</td>
+          </tr>
+          <tr>
+            <td><strong>통신</strong></td>
+            <td>직접</td>
+            <td>결과 반환만</td>
+            <td>직접</td>
+            <td>상호 메시지</td>
+          </tr>
+          <tr>
+            <td><strong>병렬</strong></td>
+            <td>-</td>
+            <td>가능 (제한적)</td>
+            <td>-</td>
+            <td>풀 병렬</td>
+          </tr>
+          <tr>
+            <td><strong>영속 메모리</strong></td>
+            <td>auto-memory</td>
+            <td>memory 필드</td>
+            <td>-</td>
+            <td>각자 메모리</td>
+          </tr>
+          <tr>
+            <td><strong>비용</strong></td>
+            <td>기본</td>
+            <td>모델 선택 가능</td>
+            <td>기본</td>
+            <td>에이전트 수 비례</td>
+          </tr>
+          <tr>
+            <td><strong>최적 용도</strong></td>
+            <td>반복 대화</td>
+            <td>격리된 단일 작업</td>
+            <td>재사용 워크플로우</td>
+            <td>복잡한 협업</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Section 11: Constraints ========== -->
+<div class="section" id="constraints">
+  <div class="section-title"><span class="icon">&#9888;</span> Constraints & Limits</div>
+  <div class="section-desc">서브에이전트를 사용할 때 반드시 알아야 하는 핵심 제약사항입니다.</div>
+
+  <div class="constraints-grid">
+    <div class="constraint-card">
+      <div class="constraint-icon">&#128683;</div>
+      <div class="constraint-body">
+        <h4>중첩 스폰 불가</h4>
+        <p>서브에이전트는 다른 서브에이전트를 스폰할 수 없습니다. 중첩이 필요하면 메인 대화에서 <strong>체이닝</strong>으로 해결하세요.</p>
+      </div>
+    </div>
+
+    <div class="constraint-card">
+      <div class="constraint-icon">&#128268;</div>
+      <div class="constraint-body">
+        <h4>스킬 비상속</h4>
+        <p>부모 대화의 스킬을 자동으로 상속하지 않습니다. frontmatter의 <strong>skills</strong> 필드에 명시적으로 나열해야 합니다.</p>
+      </div>
+    </div>
+
+    <div class="constraint-card">
+      <div class="constraint-icon">&#128196;</div>
+      <div class="constraint-body">
+        <h4>제한된 시스템 프롬프트</h4>
+        <p>Claude Code의 전체 시스템 프롬프트를 받지 않습니다. 오직 <strong>자신의 Markdown body + 기본 환경 정보</strong>만 받습니다.</p>
+      </div>
+    </div>
+
+    <div class="constraint-card">
+      <div class="constraint-icon">&#128274;</div>
+      <div class="constraint-body">
+        <h4>bypassPermissions 불변</h4>
+        <p>부모가 <strong>bypassPermissions</strong>를 설정하면 자식 서브에이전트가 이를 오버라이드할 수 없습니다. 항상 부모 설정이 우선.</p>
+      </div>
+    </div>
+
+    <div class="constraint-card">
+      <div class="constraint-icon">&#128683;</div>
+      <div class="constraint-body">
+        <h4>백그라운드 권한 제한</h4>
+        <p>백그라운드 서브에이전트는 사전 승인된 권한만 사용. 미승인 권한은 <strong>자동 거부</strong>되고, AskUserQuestion도 실패합니다.</p>
+      </div>
+    </div>
+
+    <div class="constraint-card">
+      <div class="constraint-icon">&#9200;</div>
+      <div class="constraint-body">
+        <h4>시작 지연 (Cold Start)</h4>
+        <p>서브에이전트는 새로운 컨텍스트에서 시작하므로 <strong>코드베이스 파악에 시간</strong>이 필요합니다. 지연이 중요하면 메인 대화가 적합.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Best Practices -->
+  <div style="margin-top: 48px;">
+    <h3 style="font-size: 1.2rem; margin-bottom: 20px;">&#11088; Best Practices</h3>
+    <div class="patterns-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+      <div class="tool-card" style="border-top: 3px solid var(--green);">
+        <h3 style="font-size:0.9rem;"><span style="color:var(--green);">1</span> 하나의 작업에 집중</h3>
+        <div class="note">각 서브에이전트는 한 가지 일을 잘 하도록 설계. 범용보다 전문화가 효과적.</div>
+      </div>
+      <div class="tool-card" style="border-top: 3px solid var(--accent);">
+        <h3 style="font-size:0.9rem;"><span style="color:var(--accent);">2</span> Description을 상세하게</h3>
+        <div class="note">Claude가 위임 시점을 정확히 판단하는 핵심. "use proactively" 포함 권장.</div>
+      </div>
+      <div class="tool-card" style="border-top: 3px solid var(--yellow);">
+        <h3 style="font-size:0.9rem;"><span style="color:var(--yellow);">3</span> 도구 접근 최소화</h3>
+        <div class="note">필요한 도구만 부여. 읽기 전용 에이전트에 Write/Edit을 줄 이유가 없음.</div>
+      </div>
+      <div class="tool-card" style="border-top: 3px solid var(--purple);">
+        <h3 style="font-size:0.9rem;"><span style="color:var(--purple);">4</span> 버전 관리에 체크인</h3>
+        <div class="note">프로젝트 서브에이전트를 .claude/agents/에 저장하고 팀과 공유.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <p>Claude Code Sub-agents Visual Guide &middot; Source: <a href="https://code.claude.com/docs/en/sub-agents">code.claude.com/docs/en/sub-agents</a> &middot; 2026-03-03</p>
+</div>
+
+<script>
+// Navigation
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    // Update active nav
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Show section
+    const sectionId = btn.dataset.section;
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(sectionId).classList.add('active');
+
+    // Smooth scroll to top of section
+    document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  const btns = Array.from(document.querySelectorAll('.nav-btn'));
+  const activeIdx = btns.findIndex(b => b.classList.contains('active'));
+
+  if (e.key === 'ArrowRight' && activeIdx < btns.length - 1) {
+    btns[activeIdx + 1].click();
+  } else if (e.key === 'ArrowLeft' && activeIdx > 0) {
+    btns[activeIdx - 1].click();
+  }
+});
+</script>
+</body>
+</html>
