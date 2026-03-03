@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Skill 생성 플로우</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Pretendard', system-ui, -apple-system, sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; padding: 40px 20px; }
+
+  h1 { text-align: center; font-size: 28px; margin-bottom: 8px; background: linear-gradient(135deg, #7c3aed, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 48px; }
+
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* === Section 1: Creation Flow === */
+  .flow-section { margin-bottom: 64px; }
+  .section-title { font-size: 20px; font-weight: 700; margin-bottom: 24px; padding-left: 16px; border-left: 4px solid #7c3aed; }
+
+  .flow-chart {
+    display: flex; align-items: flex-start; justify-content: center; gap: 0;
+    flex-wrap: wrap; padding: 24px 0;
+  }
+
+  .flow-step {
+    display: flex; flex-direction: column; align-items: center; width: 180px;
+    position: relative;
+  }
+
+  .step-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin-bottom: 12px;
+    border: 3px solid; position: relative; z-index: 1;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .step-icon:hover { transform: scale(1.15); box-shadow: 0 0 24px rgba(124,58,237,0.4); }
+
+  .step-1 .step-icon { background: #1a1a3e; border-color: #7c3aed; }
+  .step-2 .step-icon { background: #1a2a3e; border-color: #3b82f6; }
+  .step-3 .step-icon { background: #1a3e2a; border-color: #10b981; }
+  .step-4 .step-icon { background: #3e2a1a; border-color: #f59e0b; }
+  .step-5 .step-icon { background: #3e1a2a; border-color: #ef4444; }
+
+  .step-label { font-size: 13px; font-weight: 600; text-align: center; margin-bottom: 4px; }
+  .step-desc { font-size: 11px; color: #888; text-align: center; line-height: 1.4; padding: 0 8px; }
+  .step-num { position: absolute; top: -8px; right: -4px; background: #7c3aed; color: #fff; font-size: 11px; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+  .flow-arrow {
+    display: flex; align-items: center; padding-top: 24px; color: #555; font-size: 24px;
+  }
+
+  /* === Section 2: SKILL.md Anatomy === */
+  .anatomy-section { margin-bottom: 64px; }
+
+  .anatomy-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  }
+
+  .code-panel {
+    background: #161625; border: 1px solid #2a2a40; border-radius: 12px;
+    overflow: hidden;
+  }
+  .code-header {
+    background: #1e1e35; padding: 12px 16px; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #2a2a40;
+  }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .code-body { padding: 20px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.8; white-space: pre; overflow-x: auto; }
+
+  .hl-key { color: #7c3aed; }
+  .hl-val { color: #10b981; }
+  .hl-sep { color: #555; }
+  .hl-comment { color: #666; font-style: italic; }
+  .hl-heading { color: #f59e0b; font-weight: 700; }
+  .hl-var { color: #ef4444; }
+  .hl-cmd { color: #06b6d4; }
+
+  .annotation-panel { display: flex; flex-direction: column; gap: 12px; }
+
+  .anno-card {
+    background: #161625; border: 1px solid #2a2a40; border-radius: 10px;
+    padding: 16px; display: flex; gap: 12px; align-items: flex-start;
+    transition: border-color 0.2s;
+  }
+  .anno-card:hover { border-color: #7c3aed; }
+
+  .anno-badge {
+    min-width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .anno-badge.purple { background: #7c3aed22; }
+  .anno-badge.blue { background: #3b82f622; }
+  .anno-badge.green { background: #10b98122; }
+  .anno-badge.yellow { background: #f59e0b22; }
+  .anno-badge.red { background: #ef444422; }
+  .anno-badge.cyan { background: #06b6d422; }
+
+  .anno-text { flex: 1; }
+  .anno-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .anno-desc { font-size: 11px; color: #888; line-height: 1.4; }
+
+  /* === Section 3: Decision Tree === */
+  .tree-section { margin-bottom: 64px; }
+
+  .decision-tree {
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+  }
+
+  .tree-node {
+    background: #161625; border: 2px solid #2a2a40; border-radius: 12px;
+    padding: 16px 24px; text-align: center; position: relative;
+    max-width: 340px; width: 100%;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .tree-node:hover { transform: scale(1.03); }
+  .tree-node.question { border-color: #7c3aed; background: #1a1a3e; }
+  .tree-node.answer { border-color: #10b981; background: #0f2a1a; }
+  .tree-node.answer-alt { border-color: #f59e0b; background: #2a1f0f; }
+
+  .tree-node .node-label { font-size: 14px; font-weight: 600; }
+  .tree-node .node-hint { font-size: 11px; color: #888; margin-top: 4px; }
+
+  .tree-connector {
+    display: flex; justify-content: center; align-items: center;
+    height: 40px; position: relative;
+  }
+  .tree-connector::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
+    border-left: 2px dashed #333;
+  }
+
+  .tree-branch {
+    display: flex; gap: 40px; justify-content: center; width: 100%;
+    position: relative;
+  }
+  .tree-branch::before {
+    content: ''; position: absolute; top: 0;
+    left: calc(50% - 140px); right: calc(50% - 140px);
+    border-top: 2px dashed #333;
+  }
+
+  .branch-label {
+    position: absolute; top: -22px; font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 4px;
+  }
+  .branch-yes { left: calc(50% - 180px); background: #10b98133; color: #10b981; }
+  .branch-no { right: calc(50% - 160px); background: #ef444433; color: #ef4444; }
+
+  .tree-level { display: flex; flex-direction: column; align-items: center; gap: 0; }
+
+  /* === Section 4: Location Map === */
+  .location-section { margin-bottom: 64px; }
+
+  .location-map {
+    display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;
+  }
+
+  .location-card {
+    background: #161625; border: 1px solid #2a2a40; border-radius: 12px;
+    padding: 24px; width: 260px; text-align: center;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .location-card:hover { border-color: #7c3aed; transform: translateY(-4px); }
+
+  .loc-icon { font-size: 36px; margin-bottom: 12px; }
+  .loc-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .loc-path { font-size: 11px; color: #7c3aed; font-family: monospace; margin-bottom: 8px; word-break: break-all; }
+  .loc-scope { font-size: 12px; color: #888; }
+  .loc-priority { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 10px; }
+  .p-high { background: #ef444433; color: #ef4444; }
+  .p-mid { background: #f59e0b33; color: #f59e0b; }
+  .p-low { background: #10b98133; color: #10b981; }
+
+  /* === Section 5: Frontmatter Quick Ref === */
+  .ref-section { margin-bottom: 64px; }
+
+  .ref-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;
+  }
+
+  .ref-card {
+    background: #161625; border: 1px solid #2a2a40; border-radius: 10px;
+    padding: 16px; transition: border-color 0.2s;
+  }
+  .ref-card:hover { border-color: #3b82f6; }
+  .ref-field { font-family: monospace; font-size: 14px; color: #7c3aed; font-weight: 600; margin-bottom: 4px; }
+  .ref-type { font-size: 11px; color: #555; margin-bottom: 6px; }
+  .ref-desc { font-size: 12px; color: #aaa; line-height: 1.4; }
+  .ref-example { font-size: 11px; color: #06b6d4; font-family: monospace; margin-top: 6px; background: #0a0a18; padding: 6px 10px; border-radius: 6px; }
+
+  /* === Section 6: Invocation Matrix === */
+  .matrix-section { margin-bottom: 64px; }
+  .matrix-table {
+    width: 100%; border-collapse: collapse; background: #161625;
+    border-radius: 12px; overflow: hidden; border: 1px solid #2a2a40;
+  }
+  .matrix-table th {
+    background: #1e1e35; padding: 14px 16px; font-size: 13px;
+    text-align: left; border-bottom: 1px solid #2a2a40;
+  }
+  .matrix-table td {
+    padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #1a1a2e;
+  }
+  .matrix-table tr:hover td { background: #1a1a2e; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-yes { background: #10b98133; color: #10b981; }
+  .badge-no { background: #ef444433; color: #ef4444; }
+  .config-code { font-family: monospace; font-size: 12px; color: #7c3aed; background: #0a0a18; padding: 4px 8px; border-radius: 4px; }
+
+  /* === Footer === */
+  .footer { text-align: center; color: #444; font-size: 12px; padding-top: 32px; border-top: 1px solid #1a1a2e; }
+
+  @media (max-width: 768px) {
+    .anatomy-grid { grid-template-columns: 1fr; }
+    .flow-chart { flex-direction: column; align-items: center; }
+    .flow-arrow { transform: rotate(90deg); padding: 8px 0; }
+    .tree-branch { flex-direction: column; gap: 16px; }
+    .tree-branch::before { display: none; }
+    .location-map { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Claude Code Skill 생성 가이드</h1>
+<p class="subtitle">스킬의 구조, 생성 흐름, 설정 옵션을 시각적으로 탐색하세요</p>
+
+<!-- ===== 1. Creation Flow ===== -->
+<section class="flow-section">
+  <h2 class="section-title">생성 플로우</h2>
+  <div class="flow-chart">
+    <div class="flow-step step-1">
+      <div class="step-icon">📁<span class="step-num">1</span></div>
+      <div class="step-label">디렉토리 생성</div>
+      <div class="step-desc">mkdir -p<br>~/.claude/skills/my-skill/</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step step-2">
+      <div class="step-icon">📝<span class="step-num">2</span></div>
+      <div class="step-label">SKILL.md 작성</div>
+      <div class="step-desc">Frontmatter + 마크다운 지시사항</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step step-3">
+      <div class="step-icon">📎<span class="step-num">3</span></div>
+      <div class="step-label">보조 파일 추가</div>
+      <div class="step-desc">템플릿, 예시, 스크립트 (선택)</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step step-4">
+      <div class="step-icon">🧪<span class="step-num">4</span></div>
+      <div class="step-label">테스트</div>
+      <div class="step-desc">/skill-name 또는 자연어로 호출</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step step-5">
+      <div class="step-icon">🚀<span class="step-num">5</span></div>
+      <div class="step-label">배포</div>
+      <div class="step-desc">Git 커밋 또는 플러그인으로 공유</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 2. SKILL.md Anatomy ===== -->
+<section class="anatomy-section">
+  <h2 class="section-title">SKILL.md 해부도</h2>
+  <div class="anatomy-grid">
+    <div class="code-panel">
+      <div class="code-header">
+        <div class="code-dot" style="background:#ef4444"></div>
+        <div class="code-dot" style="background:#f59e0b"></div>
+        <div class="code-dot" style="background:#10b981"></div>
+        SKILL.md
+      </div>
+      <div class="code-body"><span class="hl-sep">---</span>
+<span class="hl-key">name</span>: <span class="hl-val">fix-issue</span>
+<span class="hl-key">description</span>: <span class="hl-val">Fix a GitHub issue by number</span>
+<span class="hl-key">argument-hint</span>: <span class="hl-val">[issue-number]</span>
+<span class="hl-key">disable-model-invocation</span>: <span class="hl-val">true</span>
+<span class="hl-key">allowed-tools</span>: <span class="hl-val">Bash(gh *), Read, Edit</span>
+<span class="hl-key">context</span>: <span class="hl-val">fork</span>
+<span class="hl-key">agent</span>: <span class="hl-val">general-purpose</span>
+<span class="hl-key">model</span>: <span class="hl-val">sonnet</span>
+<span class="hl-sep">---</span>
+
+<span class="hl-heading"># Fix GitHub Issue</span>
+
+<span class="hl-comment">&lt;!-- 동적 컨텍스트 주입 --&gt;</span>
+이슈 정보: <span class="hl-cmd">!`gh issue view $ARGUMENTS`</span>
+
+<span class="hl-heading">## 절차</span>
+1. 이슈 <span class="hl-var">$ARGUMENTS</span> 분석
+2. 관련 코드 탐색
+3. 수정 구현
+4. 테스트 작성
+5. 커밋 생성</div>
+    </div>
+
+    <div class="annotation-panel">
+      <div class="anno-card">
+        <div class="anno-badge purple">📋</div>
+        <div class="anno-text">
+          <div class="anno-title">name</div>
+          <div class="anno-desc">/fix-issue로 호출되는 스킬 이름. 소문자, 숫자, 하이픈만 허용</div>
+        </div>
+      </div>
+      <div class="anno-card">
+        <div class="anno-badge blue">💬</div>
+        <div class="anno-text">
+          <div class="anno-title">description</div>
+          <div class="anno-desc">Claude가 자동 호출 판단 시 참조하는 설명. 자연어 키워드 포함 권장</div>
+        </div>
+      </div>
+      <div class="anno-card">
+        <div class="anno-badge yellow">🔒</div>
+        <div class="anno-text">
+          <div class="anno-title">disable-model-invocation</div>
+          <div class="anno-desc">true → Claude 자동 호출 차단. 배포/커밋 등 부작용 있는 스킬에 필수</div>
+        </div>
+      </div>
+      <div class="anno-card">
+        <div class="anno-badge green">🔧</div>
+        <div class="anno-text">
+          <div class="anno-title">allowed-tools</div>
+          <div class="anno-desc">스킬 실행 시 승인 없이 사용 가능한 도구. 와일드카드 지원: Bash(gh *)</div>
+        </div>
+      </div>
+      <div class="anno-card">
+        <div class="anno-badge cyan">🔀</div>
+        <div class="anno-text">
+          <div class="anno-title">context: fork + agent</div>
+          <div class="anno-desc">격리된 서브에이전트에서 실행. Explore(읽기전용), Plan(설계), general-purpose(전체)</div>
+        </div>
+      </div>
+      <div class="anno-card">
+        <div class="anno-badge red">⚡</div>
+        <div class="anno-text">
+          <div class="anno-title">$ARGUMENTS &amp; !`cmd`</div>
+          <div class="anno-desc">$ARGUMENTS: 사용자 인자 치환. !`cmd`: 셸 명령 실행 후 결과 주입 (전처리)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 3. Decision Tree ===== -->
+<section class="tree-section">
+  <h2 class="section-title">스킬 설정 의사결정 트리</h2>
+  <div class="decision-tree">
+
+    <div class="tree-node question">
+      <div class="node-label">❓ 부작용(side-effect)이 있는가?</div>
+      <div class="node-hint">배포, 커밋, 메시지 전송, DB 변경 등</div>
+    </div>
+
+    <div class="tree-connector"></div>
+    <div class="tree-branch">
+      <span class="branch-label branch-yes">Yes</span>
+      <span class="branch-label branch-no">No</span>
+
+      <div class="tree-level">
+        <div class="tree-node answer-alt" style="border-color:#ef4444">
+          <div class="node-label">🔒 disable-model-invocation: true</div>
+          <div class="node-hint">사용자만 /name으로 수동 호출</div>
+        </div>
+      </div>
+
+      <div class="tree-level">
+        <div class="tree-node question">
+          <div class="node-label">❓ 사용자가 직접 호출할 일이 있는가?</div>
+        </div>
+
+        <div class="tree-connector"></div>
+        <div class="tree-branch">
+          <span class="branch-label branch-yes">Yes</span>
+          <span class="branch-label branch-no">No</span>
+
+          <div class="tree-level">
+            <div class="tree-node question">
+              <div class="node-label">❓ 대화 이력이 필요한가?</div>
+            </div>
+            <div class="tree-connector"></div>
+            <div class="tree-branch">
+              <span class="branch-label branch-yes">Yes</span>
+              <span class="branch-label branch-no">No</span>
+              <div class="tree-node answer">
+                <div class="node-label">✅ 기본값 (인라인)</div>
+                <div class="node-hint">별도 설정 불필요</div>
+              </div>
+              <div class="tree-node answer">
+                <div class="node-label">✅ context: fork</div>
+                <div class="node-hint">격리 실행, 무거운 작업에 적합</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tree-level">
+            <div class="tree-node answer-alt">
+              <div class="node-label">📚 user-invocable: false</div>
+              <div class="node-hint">배경 지식 전용, / 메뉴에서 숨김</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 4. Location Map ===== -->
+<section class="location-section">
+  <h2 class="section-title">스킬 저장 위치 &amp; 우선순위</h2>
+  <div class="location-map">
+    <div class="location-card">
+      <div class="loc-icon">🏢</div>
+      <div class="loc-title">Enterprise</div>
+      <div class="loc-path">관리 설정으로 배포</div>
+      <div class="loc-scope">조직 전체 적용</div>
+      <div class="loc-priority p-high">우선순위 1 (최상)</div>
+    </div>
+    <div class="location-card">
+      <div class="loc-icon">👤</div>
+      <div class="loc-title">Personal</div>
+      <div class="loc-path">~/.claude/skills/&lt;name&gt;/SKILL.md</div>
+      <div class="loc-scope">내 모든 프로젝트</div>
+      <div class="loc-priority p-mid">우선순위 2</div>
+    </div>
+    <div class="location-card">
+      <div class="loc-icon">📦</div>
+      <div class="loc-title">Project</div>
+      <div class="loc-path">.claude/skills/&lt;name&gt;/SKILL.md</div>
+      <div class="loc-scope">해당 프로젝트만</div>
+      <div class="loc-priority p-low">우선순위 3</div>
+    </div>
+    <div class="location-card">
+      <div class="loc-icon">🔌</div>
+      <div class="loc-title">Plugin</div>
+      <div class="loc-path">&lt;plugin&gt;/skills/&lt;name&gt;/SKILL.md</div>
+      <div class="loc-scope">플러그인 활성 시</div>
+      <div class="loc-priority" style="background:#3b82f633;color:#3b82f6">네임스페이스 분리</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 5. Frontmatter Quick Ref ===== -->
+<section class="ref-section">
+  <h2 class="section-title">Frontmatter 필드 레퍼런스</h2>
+  <div class="ref-grid">
+    <div class="ref-card">
+      <div class="ref-field">name</div>
+      <div class="ref-type">string · 선택</div>
+      <div class="ref-desc">스킬 이름. 생략 시 디렉토리명 사용. 소문자+숫자+하이픈, 최대 64자</div>
+      <div class="ref-example">name: fix-issue</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">description</div>
+      <div class="ref-type">string · 권장</div>
+      <div class="ref-desc">스킬 설명. Claude가 자동 호출 판단에 사용. 자연어 키워드 포함</div>
+      <div class="ref-example">description: Fix a GitHub issue</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">argument-hint</div>
+      <div class="ref-type">string · 선택</div>
+      <div class="ref-desc">자동완성 시 인자 힌트 표시</div>
+      <div class="ref-example">argument-hint: [issue-number]</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">disable-model-invocation</div>
+      <div class="ref-type">boolean · 선택</div>
+      <div class="ref-desc">true → Claude 자동 호출 차단. 수동 호출 전용</div>
+      <div class="ref-example">disable-model-invocation: true</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">user-invocable</div>
+      <div class="ref-type">boolean · 선택</div>
+      <div class="ref-desc">false → / 메뉴에서 숨김. 배경 지식 전용</div>
+      <div class="ref-example">user-invocable: false</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">allowed-tools</div>
+      <div class="ref-type">string · 선택</div>
+      <div class="ref-desc">승인 없이 사용 가능한 도구. 와일드카드 지원</div>
+      <div class="ref-example">allowed-tools: Read, Bash(gh *)</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">model</div>
+      <div class="ref-type">string · 선택</div>
+      <div class="ref-desc">실행 시 사용할 모델 지정</div>
+      <div class="ref-example">model: haiku</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">context</div>
+      <div class="ref-type">"fork" · 선택</div>
+      <div class="ref-desc">fork → 격리된 서브에이전트에서 실행. 대화 이력 접근 불가</div>
+      <div class="ref-example">context: fork</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">agent</div>
+      <div class="ref-type">string · 선택</div>
+      <div class="ref-desc">context: fork 시 에이전트 타입. Explore, Plan, general-purpose, 커스텀</div>
+      <div class="ref-example">agent: Explore</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">hooks</div>
+      <div class="ref-type">object · 선택</div>
+      <div class="ref-desc">스킬 생명주기에 연결되는 훅 설정</div>
+      <div class="ref-example">hooks: { ... }</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 6. Invocation Matrix ===== -->
+<section class="matrix-section">
+  <h2 class="section-title">호출 제어 매트릭스</h2>
+  <table class="matrix-table">
+    <thead>
+      <tr>
+        <th>설정</th>
+        <th>사용자 호출</th>
+        <th>Claude 자동 호출</th>
+        <th>컨텍스트 로딩</th>
+        <th>사용 예시</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="config-code">(기본값)</span></td>
+        <td><span class="badge badge-yes">✓ 가능</span></td>
+        <td><span class="badge badge-yes">✓ 가능</span></td>
+        <td>설명만 항상 로드</td>
+        <td>코드 설명, 리팩토링 가이드</td>
+      </tr>
+      <tr>
+        <td><span class="config-code">disable-model-invocation: true</span></td>
+        <td><span class="badge badge-yes">✓ 가능</span></td>
+        <td><span class="badge badge-no">✗ 불가</span></td>
+        <td>컨텍스트에 미포함</td>
+        <td>배포, 커밋, 메시지 전송</td>
+      </tr>
+      <tr>
+        <td><span class="config-code">user-invocable: false</span></td>
+        <td><span class="badge badge-no">✗ 불가</span></td>
+        <td><span class="badge badge-yes">✓ 가능</span></td>
+        <td>설명 항상 로드</td>
+        <td>레거시 시스템 컨텍스트, 컨벤션</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ===== 7. Variable Substitution ===== -->
+<section class="ref-section">
+  <h2 class="section-title">변수 치환 &amp; 동적 주입</h2>
+  <div class="ref-grid">
+    <div class="ref-card">
+      <div class="ref-field">$ARGUMENTS</div>
+      <div class="ref-type">전체 인자</div>
+      <div class="ref-desc">/skill-name 뒤에 입력한 모든 텍스트</div>
+      <div class="ref-example">/fix-issue 123 → $ARGUMENTS = "123"</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">$ARGUMENTS[N] / $N</div>
+      <div class="ref-type">위치별 인자 (0-based)</div>
+      <div class="ref-desc">공백으로 구분된 N번째 인자</div>
+      <div class="ref-example">/migrate A B C → $0="A" $1="B" $2="C"</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">${CLAUDE_SESSION_ID}</div>
+      <div class="ref-type">세션 ID</div>
+      <div class="ref-desc">현재 세션 고유 식별자. 로깅에 유용</div>
+      <div class="ref-example">logs/${CLAUDE_SESSION_ID}.log</div>
+    </div>
+    <div class="ref-card">
+      <div class="ref-field">!`command`</div>
+      <div class="ref-type">동적 컨텍스트 주입</div>
+      <div class="ref-desc">셸 명령 실행 → 결과를 스킬에 삽입 (전처리)</div>
+      <div class="ref-example">!`gh pr diff` → PR diff 내용 삽입</div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  출처: <a href="https://code.claude.com/docs/en/skills" style="color:#7c3aed">Claude Code 공식 문서 - Extend Claude with skills</a>
+</footer>
+
+</div>
+</body>
+</html>

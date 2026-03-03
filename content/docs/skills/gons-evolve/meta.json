@@ -1,0 +1,13 @@
+{
+  "title": "gons-evolve",
+  "pages": [
+    "overview",
+    "agent-teams-beginner",
+    "agent-teams",
+    "hooks-guide",
+    "plugin-guide",
+    "subagent-guide",
+    "claude-code-extensions",
+    "skill-creation-flow"
+  ]
+}

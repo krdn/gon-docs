@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Hooks - Visual Guide</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #131829;
+    --surface2: #1c2340;
+    --surface3: #252d4a;
+    --border: #2a3358;
+    --border-hover: #4a5580;
+    --text: #e2e8f0;
+    --text-dim: #8892b0;
+    --text-muted: #5a6380;
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --purple: #a78bfa;
+    --purple-bg: rgba(167,139,250,0.08);
+    --green: #4ade80;
+    --green-bg: rgba(74,222,128,0.08);
+    --yellow: #fbbf24;
+    --yellow-bg: rgba(251,191,36,0.08);
+    --orange: #fb923c;
+    --orange-bg: rgba(251,146,60,0.08);
+    --pink: #f472b6;
+    --pink-bg: rgba(244,114,182,0.08);
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,0.08);
+    --cyan: #22d3ee;
+    --cyan-bg: rgba(34,211,238,0.08);
+    --blue: #60a5fa;
+    --blue-bg: rgba(96,165,250,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 56px 24px 40px;
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .header p { color: var(--text-dim); font-size: 1.05rem; position: relative; }
+
+  /* Navigation */
+  .nav {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .nav-btn {
+    padding: 8px 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.25s;
+    white-space: nowrap;
+  }
+  .nav-btn:hover { background: var(--surface3); color: var(--text); border-color: var(--border-hover); }
+  .nav-btn.active {
+    background: linear-gradient(135deg, var(--accent), var(--orange));
+    color: var(--bg);
+    border-color: transparent;
+    box-shadow: 0 2px 12px rgba(56,189,248,0.25);
+  }
+
+  /* Sections */
+  .section {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    display: none;
+  }
+  .section.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-desc {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    margin-bottom: 36px;
+    max-width: 720px;
+  }
+
+  /* ========== Section 1: Lifecycle Timeline ========== */
+  .lifecycle-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .lifecycle-track {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--accent), var(--purple), var(--orange), var(--green), var(--red));
+    border-radius: 2px;
+    transform: translateX(-50%);
+    z-index: 0;
+  }
+
+  .lifecycle-phase {
+    width: 100%;
+    max-width: 1000px;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 8px;
+  }
+
+  .phase-label {
+    text-align: center;
+    padding: 8px 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    display: inline-block;
+    margin: 0 auto 12px;
+    width: auto;
+  }
+  .phase-label-wrap { text-align: center; }
+
+  .lifecycle-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 6px;
+  }
+  .lifecycle-row.left { flex-direction: row-reverse; }
+
+  .lifecycle-half { width: calc(50% - 32px); }
+  .lifecycle-center { width: 48px; display: flex; justify-content: center; flex-shrink: 0; }
+
+  .lifecycle-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid;
+    background: var(--bg);
+    position: relative;
+    z-index: 2;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .lifecycle-dot:hover { transform: scale(1.4); }
+
+  .lifecycle-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    transition: all 0.3s;
+    cursor: default;
+  }
+  .lifecycle-card:hover { border-color: var(--border-hover); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .lifecycle-card .event-name { font-weight: 700; font-size: 0.92rem; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .lifecycle-card .event-desc { font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; }
+  .lifecycle-card .event-matcher { font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+  .lifecycle-card .event-matcher span { color: var(--cyan); }
+
+  .lifecycle-empty { width: calc(50% - 32px); }
+
+  .dot-blue { border-color: var(--accent); }
+  .dot-purple { border-color: var(--purple); }
+  .dot-green { border-color: var(--green); }
+  .dot-yellow { border-color: var(--yellow); }
+  .dot-orange { border-color: var(--orange); }
+  .dot-pink { border-color: var(--pink); }
+  .dot-red { border-color: var(--red); }
+  .dot-cyan { border-color: var(--cyan); }
+
+  .card-blue { border-left: 3px solid var(--accent); }
+  .card-purple { border-left: 3px solid var(--purple); }
+  .card-green { border-left: 3px solid var(--green); }
+  .card-yellow { border-left: 3px solid var(--yellow); }
+  .card-orange { border-left: 3px solid var(--orange); }
+  .card-pink { border-left: 3px solid var(--pink); }
+  .card-red { border-left: 3px solid var(--red); }
+  .card-cyan { border-left: 3px solid var(--cyan); }
+
+  .card-right { border-left: none; }
+  .card-right.card-blue { border-right: 3px solid var(--accent); }
+  .card-right.card-purple { border-right: 3px solid var(--purple); }
+  .card-right.card-green { border-right: 3px solid var(--green); }
+  .card-right.card-yellow { border-right: 3px solid var(--yellow); }
+  .card-right.card-orange { border-right: 3px solid var(--orange); }
+  .card-right.card-pink { border-right: 3px solid var(--pink); }
+  .card-right.card-red { border-right: 3px solid var(--red); }
+  .card-right.card-cyan { border-right: 3px solid var(--cyan); }
+
+  /* ========== Section 2: Hook Types ========== */
+  .types-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+
+  .type-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .type-card:hover { border-color: var(--border-hover); transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,0.3); }
+  .type-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+  .type-card.type-command::before { background: linear-gradient(90deg, var(--accent), var(--cyan)); }
+  .type-card.type-http::before { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+  .type-card.type-prompt::before { background: linear-gradient(90deg, var(--purple), var(--pink)); }
+  .type-card.type-agent::before { background: linear-gradient(90deg, var(--orange), var(--yellow)); }
+
+  .type-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .type-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; flex-shrink: 0;
+  }
+  .type-command .type-icon { background: rgba(56,189,248,0.12); }
+  .type-http .type-icon { background: rgba(74,222,128,0.12); }
+  .type-prompt .type-icon { background: rgba(167,139,250,0.12); }
+  .type-agent .type-icon { background: rgba(251,146,60,0.12); }
+
+  .type-name { font-size: 1.15rem; font-weight: 700; }
+  .type-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 6px;
+    font-size: 0.65rem; font-weight: 700; margin-left: 8px;
+  }
+  .type-body { font-size: 0.85rem; color: var(--text-dim); line-height: 1.7; margin-bottom: 16px; }
+
+  .type-features {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .type-feature {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 0.8rem; color: var(--text-dim);
+  }
+  .type-feature .dot {
+    width: 6px; height: 6px; border-radius: 50%; margin-top: 6px; flex-shrink: 0;
+  }
+
+  /* Decision tree */
+  .decision-tree {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-top: 16px;
+  }
+  .decision-tree h3 { font-size: 1.1rem; margin-bottom: 24px; text-align: center; }
+
+  .dtree { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .dtree-node {
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    position: relative;
+  }
+  .dtree-question {
+    background: var(--surface2);
+    border: 2px solid var(--accent);
+    color: var(--text);
+    min-width: 280px;
+  }
+  .dtree-answer {
+    border: 2px solid;
+    min-width: 160px;
+  }
+  .dtree-answer.cmd { border-color: var(--accent); background: rgba(56,189,248,0.08); color: var(--accent); }
+  .dtree-answer.http { border-color: var(--green); background: rgba(74,222,128,0.08); color: var(--green); }
+  .dtree-answer.prompt { border-color: var(--purple); background: rgba(167,139,250,0.08); color: var(--purple); }
+  .dtree-answer.agent { border-color: var(--orange); background: rgba(251,146,60,0.08); color: var(--orange); }
+
+  .dtree-branch { display: flex; gap: 48px; align-items: flex-start; }
+  .dtree-path { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .dtree-arrow {
+    display: flex; flex-direction: column; align-items: center;
+    font-size: 0.7rem; color: var(--text-muted); padding: 8px 0;
+  }
+  .dtree-arrow .line { width: 2px; height: 16px; background: var(--border); }
+  .dtree-arrow .label { padding: 2px 8px; background: var(--surface2); border-radius: 8px; margin: 4px 0; }
+
+  .dtree-hline {
+    display: flex; align-items: center; gap: 0;
+  }
+  .dtree-hline .seg { width: 80px; height: 2px; background: var(--border); }
+  .dtree-hline .mid { width: 2px; height: 20px; background: var(--border); }
+
+  /* ========== Section 3: Data Flow ========== */
+  .dataflow-container { display: flex; flex-direction: column; gap: 0; align-items: center; }
+
+  .df-step {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    max-width: 960px;
+  }
+
+  .df-step-num {
+    width: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .df-step-num .circle {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1rem;
+    flex-shrink: 0;
+    border: 2px solid;
+  }
+  .df-step-num .vline { flex: 1; width: 2px; background: var(--border); }
+
+  .df-step-content {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.3s;
+  }
+  .df-step-content:hover { border-color: var(--accent); }
+  .df-step-content h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+  .df-step-content p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+
+  .df-code {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 12px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+  .df-code .key { color: var(--accent); }
+  .df-code .val { color: var(--green); }
+  .df-code .str { color: var(--yellow); }
+  .df-code .comment { color: var(--text-muted); font-style: italic; }
+  .df-code .num { color: var(--orange); }
+
+  .df-visual {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0 8px 16px;
+    margin-bottom: 16px;
+  }
+
+  .exit-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .exit-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .exit-card:hover { border-color: var(--border-hover); }
+  .exit-code { font-family: monospace; font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+  .exit-label { font-size: 0.78rem; font-weight: 600; margin-bottom: 4px; }
+  .exit-desc { font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; }
+
+  .exit-green .exit-code { color: var(--green); }
+  .exit-red .exit-code { color: var(--red); }
+  .exit-yellow .exit-code { color: var(--yellow); }
+
+  /* ========== Section 4: Matcher System ========== */
+  .matcher-map { display: flex; flex-direction: column; gap: 16px; }
+
+  .matcher-group {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .matcher-group:hover { border-color: var(--border-hover); }
+
+  .matcher-group-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px;
+    background: var(--surface3);
+    cursor: pointer;
+    user-select: none;
+  }
+  .matcher-group-header .icon { font-size: 1.2rem; }
+  .matcher-group-header .title { font-weight: 700; font-size: 0.95rem; flex: 1; }
+  .matcher-group-header .count {
+    padding: 2px 10px; border-radius: 10px;
+    font-size: 0.7rem; font-weight: 700;
+    background: var(--surface); color: var(--text-dim);
+  }
+
+  .matcher-group-body { padding: 16px 20px; }
+
+  .matcher-events {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+  }
+
+  .matcher-event {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: all 0.2s;
+  }
+  .matcher-event:hover { border-color: var(--accent); }
+  .matcher-event .name { font-weight: 600; font-size: 0.85rem; min-width: 140px; }
+  .matcher-event .examples { font-family: monospace; font-size: 0.75rem; color: var(--cyan); }
+
+  .matcher-note {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(56,189,248,0.06);
+    border: 1px solid rgba(56,189,248,0.15);
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+  .matcher-note strong { color: var(--accent); }
+
+  /* ========== Section 5: Practical Examples ========== */
+  .examples-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 20px;
+  }
+
+  .example-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .example-card:hover { border-color: var(--border-hover); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+
+  .example-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .example-header .emoji { font-size: 1.5rem; }
+  .example-header .info h3 { font-size: 0.95rem; font-weight: 700; }
+  .example-header .info p { font-size: 0.75rem; color: var(--text-muted); }
+
+  .example-body { padding: 16px 20px; }
+  .example-desc { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 14px; line-height: 1.6; }
+
+  .example-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .example-tag {
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+  }
+  .tag-event { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(96,165,250,0.2); }
+  .tag-matcher { background: var(--cyan-bg); color: var(--cyan); border: 1px solid rgba(34,211,238,0.2); }
+  .tag-type { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+  .tag-scope { background: var(--green-bg); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+
+  .example-code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .example-flow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .flow-chip {
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.72rem;
+  }
+  .flow-arrow-r { color: var(--text-muted); font-size: 0.9rem; }
+
+  /* ========== Section 6: Config & Scope ========== */
+  .scope-container { display: flex; flex-direction: column; gap: 24px; }
+
+  .scope-pyramid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 24px;
+  }
+
+  .scope-level {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 24px;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s;
+    cursor: default;
+    border: 1px solid var(--border);
+  }
+  .scope-level:hover { transform: scale(1.02); }
+  .scope-level:first-child { border-radius: 12px 12px 0 0; }
+  .scope-level:last-child { border-radius: 0 0 12px 12px; }
+
+  .scope-level .label { font-weight: 700; font-size: 0.9rem; }
+  .scope-level .path { font-family: monospace; font-size: 0.75rem; margin-top: 2px; }
+  .scope-level .info { font-size: 0.72rem; margin-top: 2px; }
+
+  .scope-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .scope-detail-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s;
+  }
+  .scope-detail-card:hover { border-color: var(--border-hover); }
+  .scope-detail-card h4 { font-size: 0.95rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .scope-detail-card .path { font-family: monospace; font-size: 0.78rem; color: var(--cyan); margin-bottom: 8px; }
+  .scope-detail-card .desc { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; }
+  .scope-detail-card .badges { display: flex; gap: 6px; margin-top: 10px; }
+
+  .badge-sm {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+  }
+  .badge-share { background: var(--green-bg); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+  .badge-local { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
+  .badge-global { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(96,165,250,0.2); }
+  .badge-project { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+
+  /* ========== Section 7: Troubleshooting ========== */
+  .trouble-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .trouble-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .trouble-card:hover { border-color: var(--red); }
+
+  .trouble-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface3);
+  }
+  .trouble-header .icon { font-size: 1.3rem; }
+  .trouble-header h4 { font-size: 0.9rem; font-weight: 700; }
+
+  .trouble-body { padding: 14px 18px; }
+  .trouble-cause { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 10px; line-height: 1.5; }
+
+  .trouble-fix {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(74,222,128,0.06);
+    border: 1px solid rgba(74,222,128,0.12);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .trouble-fix .check { color: var(--green); font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+  .debug-tools {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .debug-tool {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+  .debug-tool:hover { border-color: var(--accent); }
+  .debug-tool .shortcut {
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: 800;
+    padding: 6px 16px;
+    background: var(--surface);
+    border-radius: 8px;
+    display: inline-block;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+  }
+  .debug-tool .label { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+  .debug-tool .desc { font-size: 0.75rem; color: var(--text-muted); }
+
+  /* ========== Responsive ========== */
+  @media (max-width: 768px) {
+    .header h1 { font-size: 1.6rem; }
+    .types-grid { grid-template-columns: 1fr; }
+    .examples-grid { grid-template-columns: 1fr; }
+    .scope-detail-grid { grid-template-columns: 1fr; }
+    .trouble-grid { grid-template-columns: 1fr; }
+    .debug-tools { grid-template-columns: 1fr; }
+    .exit-grid { grid-template-columns: 1fr; }
+    .lifecycle-card .event-name { font-size: 0.82rem; }
+    .dtree-branch { flex-direction: column; gap: 16px; }
+    .df-visual { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>Claude Code Hooks</h1>
+  <p>생명주기 자동화 시스템 — 이벤트, 타입, 데이터 흐름, 설정까지</p>
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection('lifecycle')">Lifecycle</button>
+  <button class="nav-btn" onclick="showSection('types')">Hook Types</button>
+  <button class="nav-btn" onclick="showSection('dataflow')">Data Flow</button>
+  <button class="nav-btn" onclick="showSection('matchers')">Matchers</button>
+  <button class="nav-btn" onclick="showSection('examples')">Examples</button>
+  <button class="nav-btn" onclick="showSection('config')">Config & Scope</button>
+  <button class="nav-btn" onclick="showSection('trouble')">Troubleshooting</button>
+</div>
+
+<!-- ==================== Section 1: Lifecycle Timeline ==================== -->
+<div id="lifecycle" class="section active">
+  <div class="section-title"><span class="icon">&#x1F504;</span> Lifecycle Timeline</div>
+  <div class="section-desc">Claude Code의 생명주기에서 Hook이 발동하는 18개 이벤트. 왼쪽은 사용자/세션 이벤트, 오른쪽은 도구/에이전트 이벤트입니다.</div>
+
+  <div class="lifecycle-container">
+    <div class="lifecycle-track"></div>
+
+    <!-- Phase: Session -->
+    <div class="lifecycle-phase">
+      <div class="phase-label-wrap"><span class="phase-label">SESSION START</span></div>
+
+      <div class="lifecycle-row">
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-blue">
+            <div class="event-name" style="color:var(--accent)">SessionStart</div>
+            <div class="event-desc">세션 시작 또는 재개 시 발동. 컨텍스트 주입, 환경 초기화에 사용</div>
+            <div class="event-matcher">matcher: <span>startup</span> | <span>resume</span> | <span>clear</span> | <span>compact</span></div>
+          </div>
+        </div>
+        <div class="lifecycle-center"><div class="lifecycle-dot dot-blue"></div></div>
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-purple card-right">
+            <div class="event-name" style="color:var(--purple)">ConfigChange</div>
+            <div class="event-desc">설정/스킬 파일이 외부에서 변경될 때 발동. 감사 로그나 변경 차단</div>
+            <div class="event-matcher">matcher: <span>user_settings</span> | <span>project_settings</span> | <span>skills</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase: User Input -->
+    <div class="lifecycle-phase">
+      <div class="phase-label-wrap"><span class="phase-label">USER INPUT</span></div>
+
+      <div class="lifecycle-row">
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-green">
+            <div class="event-name" style="color:var(--green)">UserPromptSubmit</div>
+            <div class="event-desc">프롬프트 제출 시, Claude가 처리하기 전에 발동. 입력 검증, 컨텍스트 추가</div>
+            <div class="event-matcher">matcher: <span>미지원 (항상 발동)</span></div>
+          </div>
+        </div>
+        <div class="lifecycle-center"><div class="lifecycle-dot dot-green"></div></div>
+        <div class="lifecycle-empty"></div>
+      </div>
+    </div>
+
+    <!-- Phase: Tool Execution -->
+    <div class="lifecycle-phase">
+      <div class="phase-label-wrap"><span class="phase-label">TOOL EXECUTION</span></div>
+
+      <div class="lifecycle-row">
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-orange">
+            <div class="event-name" style="color:var(--orange)">PreToolUse</div>
+            <div class="event-desc">도구 호출 실행 <strong>전</strong>에 발동. 차단(deny), 허용(allow), 확인(ask) 가능</div>
+            <div class="event-matcher">matcher: <span>Bash</span> | <span>Edit|Write</span> | <span>mcp__.*</span></div>
+          </div>
+        </div>
+        <div class="lifecycle-center"><div class="lifecycle-dot dot-orange"></div></div>
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-yellow card-right">
+            <div class="event-name" style="color:var(--yellow)">PermissionRequest</div>
+            <div class="event-desc">권한 대화상자 표시 시 발동. 자동 승인/거부 로직. 비대화형 모드(-p) 미작동</div>
+            <div class="event-matcher">matcher: <span>도구 이름 (Bash, Edit 등)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lifecycle-row">
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-cyan">
+            <div class="event-name" style="color:var(--cyan)">PostToolUse</div>
+            <div class="event-desc">도구 호출 <strong>성공 후</strong> 발동. 포맷팅, 로깅 등. 이미 실행된 작업은 되돌릴 수 없음</div>
+            <div class="event-matcher">matcher: <span>도구 이름 (Bash, Edit|Write 등)</span></div>
+          </div>
+        </div>
+        <div class="lifecycle-center"><div class="lifecycle-dot dot-cyan"></div></div>
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-red card-right">
+            <div class="event-name" style="color:var(--red)">PostToolUseFailure</div>
+            <div class="event-desc">도구 호출 <strong>실패 후</strong> 발동. 에러 로깅, 대체 경로 안내</div>
+            <div class="event-matcher">matcher: <span>도구 이름</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase: Agents -->
+    <div class="lifecycle-phase">
+      <div class="phase-label-wrap"><span class="phase-label">SUBAGENTS</span></div>
+
+      <div class="lifecycle-row">
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-purple">
+            <div class="event-name" style="color:var(--purple)">SubagentStart</div>
+            <div class="event-desc">서브에이전트 생성(스폰) 시 발동. 추적, 초기 설정</div>
+            <div class="event-matcher">matcher: <span>Bash</span> | <span>Explore</span> | <span>Plan</span> | <span>커스텀</span></div>
+          </div>
+        </div>
+        <div class="lifecycle-center"><div class="lifecycle-dot dot-purple"></div></div>
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-pink card-right">
+            <div class="event-name" style="color:var(--pink)">SubagentStop</div>
+            <div class="event-desc">서브에이전트 종료 시 발동. 정리 작업, 결과 기록</div>
+            <div class="event-matcher">matcher: <span>에이전트 타입</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lifecycle-row">
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-yellow">
+            <div class="event-name" style="color:var(--yellow)">TeammateIdle</div>
+            <div class="event-desc">팀 에이전트가 유휴 상태로 전환될 때 발동. 작업 재배정</div>
+            <div class="event-matcher">matcher: <span>미지원 (항상 발동)</span></div>
+          </div>
+        </div>
+        <div class="lifecycle-center"><div class="lifecycle-dot dot-yellow"></div></div>
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-green card-right">
+            <div class="event-name" style="color:var(--green)">TaskCompleted</div>
+            <div class="event-desc">태스크가 완료로 표시될 때 발동. 자동 검증</div>
+            <div class="event-matcher">matcher: <span>미지원 (항상 발동)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase: Worktree & Compact -->
+    <div class="lifecycle-phase">
+      <div class="phase-label-wrap"><span class="phase-label">WORKTREE & COMPACT</span></div>
+
+      <div class="lifecycle-row">
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-blue">
+            <div class="event-name" style="color:var(--accent)">WorktreeCreate</div>
+            <div class="event-desc">Worktree 생성 시 발동. 기본 git 동작을 대체</div>
+            <div class="event-matcher">matcher: <span>미지원 (항상 발동)</span></div>
+          </div>
+        </div>
+        <div class="lifecycle-center"><div class="lifecycle-dot dot-blue"></div></div>
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-orange card-right">
+            <div class="event-name" style="color:var(--orange)">WorktreeRemove</div>
+            <div class="event-desc">Worktree 제거 시 (세션 종료 또는 서브에이전트 완료)</div>
+            <div class="event-matcher">matcher: <span>미지원 (항상 발동)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lifecycle-row">
+        <div class="lifecycle-empty"></div>
+        <div class="lifecycle-center"><div class="lifecycle-dot dot-pink"></div></div>
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-pink card-right">
+            <div class="event-name" style="color:var(--pink)">PreCompact</div>
+            <div class="event-desc">컨텍스트 압축 직전에 발동. 상태 저장</div>
+            <div class="event-matcher">matcher: <span>manual</span> | <span>auto</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase: Notification & End -->
+    <div class="lifecycle-phase">
+      <div class="phase-label-wrap"><span class="phase-label">NOTIFICATION & END</span></div>
+
+      <div class="lifecycle-row">
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-cyan">
+            <div class="event-name" style="color:var(--cyan)">Notification</div>
+            <div class="event-desc">Claude Code가 알림을 보낼 때 발동. 데스크톱 알림 연동</div>
+            <div class="event-matcher">matcher: <span>permission_prompt</span> | <span>idle_prompt</span> | <span>auth_success</span></div>
+          </div>
+        </div>
+        <div class="lifecycle-center"><div class="lifecycle-dot dot-cyan"></div></div>
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-green card-right">
+            <div class="event-name" style="color:var(--green)">Stop</div>
+            <div class="event-desc">Claude 응답 완료 시 발동. 완료 검증, 추가 작업 지시. 인터럽트 시 미발동</div>
+            <div class="event-matcher">matcher: <span>미지원 (항상 발동)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lifecycle-row">
+        <div class="lifecycle-half">
+          <div class="lifecycle-card card-red">
+            <div class="event-name" style="color:var(--red)">SessionEnd</div>
+            <div class="event-desc">세션 종료 시 발동. 정리, 로깅</div>
+            <div class="event-matcher">matcher: <span>clear</span> | <span>logout</span> | <span>prompt_input_exit</span> | <span>other</span></div>
+          </div>
+        </div>
+        <div class="lifecycle-center"><div class="lifecycle-dot dot-red"></div></div>
+        <div class="lifecycle-empty"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== Section 2: Hook Types ==================== -->
+<div id="types" class="section">
+  <div class="section-title"><span class="icon">&#x1F527;</span> Hook Types</div>
+  <div class="section-desc">4가지 훅 타입의 특징과 선택 기준. 각 타입이 어떻게 동작하고 언제 사용하는지 한눈에 파악합니다.</div>
+
+  <div class="types-grid">
+    <!-- Command -->
+    <div class="type-card type-command">
+      <div class="type-header">
+        <div class="type-icon">&#x1F4BB;</div>
+        <div>
+          <div class="type-name">command <span class="type-badge" style="background:var(--blue-bg);color:var(--blue);">기본</span></div>
+        </div>
+      </div>
+      <div class="type-body">셸 명령을 직접 실행합니다. 대부분의 훅에서 사용하는 기본 타입. stdin으로 JSON을 받고, exit code와 stdout/stderr로 결과를 반환합니다.</div>
+      <div class="type-features">
+        <div class="type-feature"><div class="dot" style="background:var(--accent)"></div>stdin으로 이벤트 JSON 수신</div>
+        <div class="type-feature"><div class="dot" style="background:var(--accent)"></div>exit 0 = 허용, exit 2 = 차단</div>
+        <div class="type-feature"><div class="dot" style="background:var(--accent)"></div>stdout → Claude 컨텍스트 주입</div>
+        <div class="type-feature"><div class="dot" style="background:var(--accent)"></div>/hooks 메뉴에서 설정 가능</div>
+        <div class="type-feature"><div class="dot" style="background:var(--accent)"></div>기본 타임아웃: 10분</div>
+      </div>
+    </div>
+
+    <!-- HTTP -->
+    <div class="type-card type-http">
+      <div class="type-header">
+        <div class="type-icon">&#x1F310;</div>
+        <div>
+          <div class="type-name">http <span class="type-badge" style="background:var(--green-bg);color:var(--green);">외부 연동</span></div>
+        </div>
+      </div>
+      <div class="type-body">HTTP POST로 이벤트 데이터를 외부 엔드포인트에 전송합니다. 팀 공유 감사 로그, 클라우드 함수 연동 등에 적합합니다.</div>
+      <div class="type-features">
+        <div class="type-feature"><div class="dot" style="background:var(--green)"></div>JSON POST (command stdin과 동일 데이터)</div>
+        <div class="type-feature"><div class="dot" style="background:var(--green)"></div>응답 본문으로 결과 반환 (JSON)</div>
+        <div class="type-feature"><div class="dot" style="background:var(--green)"></div>헤더에서 $VAR 환경변수 보간</div>
+        <div class="type-feature"><div class="dot" style="background:var(--green)"></div>allowedEnvVars로 변수 허용 목록 지정</div>
+        <div class="type-feature"><div class="dot" style="background:var(--yellow)"></div>JSON 직접 편집만 가능 (/hooks 메뉴 미지원)</div>
+      </div>
+    </div>
+
+    <!-- Prompt -->
+    <div class="type-card type-prompt">
+      <div class="type-header">
+        <div class="type-icon">&#x1F9E0;</div>
+        <div>
+          <div class="type-name">prompt <span class="type-badge" style="background:var(--purple-bg);color:var(--purple);">LLM 판단</span></div>
+        </div>
+      </div>
+      <div class="type-body">LLM(기본 Haiku)에게 프롬프트를 보내 1회 판단을 요청합니다. 규칙으로 표현하기 어려운 주관적 조건 검사에 적합합니다.</div>
+      <div class="type-features">
+        <div class="type-feature"><div class="dot" style="background:var(--purple)"></div>ok: true (허용) / ok: false (차단 + reason)</div>
+        <div class="type-feature"><div class="dot" style="background:var(--purple)"></div>model 필드로 모델 변경 가능</div>
+        <div class="type-feature"><div class="dot" style="background:var(--purple)"></div>입력 데이터만으로 판단 (도구 사용 불가)</div>
+        <div class="type-feature"><div class="dot" style="background:var(--purple)"></div>단일 턴 LLM 호출</div>
+      </div>
+    </div>
+
+    <!-- Agent -->
+    <div class="type-card type-agent">
+      <div class="type-header">
+        <div class="type-icon">&#x1F916;</div>
+        <div>
+          <div class="type-name">agent <span class="type-badge" style="background:var(--orange-bg);color:var(--orange);">서브에이전트</span></div>
+        </div>
+      </div>
+      <div class="type-body">서브에이전트를 스폰하여 파일 읽기, 코드 검색, 명령 실행 등 도구를 사용한 검증을 수행합니다. 코드베이스 실제 상태 확인에 적합합니다.</div>
+      <div class="type-features">
+        <div class="type-feature"><div class="dot" style="background:var(--orange)"></div>ok: true / ok: false (prompt 훅과 동일 형식)</div>
+        <div class="type-feature"><div class="dot" style="background:var(--orange)"></div>파일 읽기, 코드 검색, 명령 실행 가능</div>
+        <div class="type-feature"><div class="dot" style="background:var(--orange)"></div>최대 50턴 도구 사용</div>
+        <div class="type-feature"><div class="dot" style="background:var(--orange)"></div>기본 타임아웃: 60초 (설정 가능)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decision Tree -->
+  <div class="decision-tree">
+    <h3>어떤 Hook 타입을 선택할까?</h3>
+    <div class="dtree">
+      <div class="dtree-node dtree-question">결정적 규칙으로 표현 가능한가?</div>
+      <div style="display:flex;width:100%;justify-content:center;">
+        <div class="dtree-branch">
+          <div class="dtree-path">
+            <div class="dtree-arrow">
+              <div class="line"></div>
+              <div class="label" style="color:var(--green)">YES</div>
+              <div class="line"></div>
+            </div>
+            <div class="dtree-node dtree-question" style="min-width:220px;border-color:var(--green)">외부 서비스 연동이 필요한가?</div>
+            <div style="display:flex;justify-content:center;">
+              <div class="dtree-branch" style="gap:24px;">
+                <div class="dtree-path">
+                  <div class="dtree-arrow">
+                    <div class="line"></div>
+                    <div class="label" style="color:var(--green)">YES</div>
+                    <div class="line"></div>
+                  </div>
+                  <div class="dtree-node dtree-answer http">&#x1F310; http</div>
+                </div>
+                <div class="dtree-path">
+                  <div class="dtree-arrow">
+                    <div class="line"></div>
+                    <div class="label" style="color:var(--red)">NO</div>
+                    <div class="line"></div>
+                  </div>
+                  <div class="dtree-node dtree-answer cmd">&#x1F4BB; command</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dtree-path">
+            <div class="dtree-arrow">
+              <div class="line"></div>
+              <div class="label" style="color:var(--red)">NO (판단 필요)</div>
+              <div class="line"></div>
+            </div>
+            <div class="dtree-node dtree-question" style="min-width:240px;border-color:var(--purple)">코드베이스 상태 확인이 필요한가?</div>
+            <div style="display:flex;justify-content:center;">
+              <div class="dtree-branch" style="gap:24px;">
+                <div class="dtree-path">
+                  <div class="dtree-arrow">
+                    <div class="line"></div>
+                    <div class="label" style="color:var(--green)">YES</div>
+                    <div class="line"></div>
+                  </div>
+                  <div class="dtree-node dtree-answer agent">&#x1F916; agent</div>
+                </div>
+                <div class="dtree-path">
+                  <div class="dtree-arrow">
+                    <div class="line"></div>
+                    <div class="label" style="color:var(--red)">NO</div>
+                    <div class="line"></div>
+                  </div>
+                  <div class="dtree-node dtree-answer prompt">&#x1F9E0; prompt</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Section 3: Data Flow ==================== -->
+<div id="dataflow" class="section">
+  <div class="section-title"><span class="icon">&#x1F4CA;</span> Data Flow</div>
+  <div class="section-desc">Hook이 이벤트 데이터를 받고, 처리하고, 결과를 반환하는 전체 데이터 흐름을 단계별로 설명합니다.</div>
+
+  <div class="dataflow-container">
+
+    <!-- Step 1: Event fires -->
+    <div class="df-step">
+      <div class="df-step-num">
+        <div class="circle" style="background:var(--blue-bg);border-color:var(--accent);color:var(--accent);">1</div>
+        <div class="vline"></div>
+      </div>
+      <div class="df-step-content">
+        <h3 style="color:var(--accent)">이벤트 발생</h3>
+        <p>Claude Code의 생명주기에서 특정 시점에 도달하면 이벤트가 발생합니다. 예: Claude가 Bash 도구를 호출하려 할 때 <code>PreToolUse</code> 이벤트가 발동됩니다.</p>
+      </div>
+    </div>
+
+    <!-- Step 2: Matcher check -->
+    <div class="df-step">
+      <div class="df-step-num">
+        <div class="circle" style="background:var(--purple-bg);border-color:var(--purple);color:var(--purple);">2</div>
+        <div class="vline"></div>
+      </div>
+      <div class="df-step-content">
+        <h3 style="color:var(--purple)">Matcher 검사</h3>
+        <p>등록된 훅의 matcher 패턴과 이벤트 데이터를 비교합니다. 정규식(regex) 매칭이며 대소문자를 구분합니다. Matcher가 비어있으면 모든 이벤트에 반응합니다.</p>
+        <div class="df-code">
+<span class="comment">// matcher: "Edit|Write"</span>
+<span class="comment">// tool_name이 "Edit" 또는 "Write"일 때만 매칭</span>
+<span class="key">"matcher"</span>: <span class="str">"Edit|Write"</span>  <span class="comment">← 정규식 OR 패턴</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Input JSON -->
+    <div class="df-step">
+      <div class="df-step-num">
+        <div class="circle" style="background:var(--green-bg);border-color:var(--green);color:var(--green);">3</div>
+        <div class="vline"></div>
+      </div>
+      <div class="df-step-content">
+        <h3 style="color:var(--green)">입력 전달 (stdin JSON)</h3>
+        <p>매칭된 훅에 이벤트 데이터를 JSON으로 전달합니다. 공통 필드(session_id, cwd, hook_event_name) + 이벤트별 고유 필드가 포함됩니다.</p>
+        <div class="df-code">
+{
+  <span class="key">"session_id"</span>: <span class="str">"abc123"</span>,          <span class="comment">// 세션 고유 ID</span>
+  <span class="key">"cwd"</span>: <span class="str">"/home/gon/project"</span>,     <span class="comment">// 작업 디렉토리</span>
+  <span class="key">"hook_event_name"</span>: <span class="str">"PreToolUse"</span>,  <span class="comment">// 이벤트 이름</span>
+  <span class="key">"tool_name"</span>: <span class="str">"Bash"</span>,              <span class="comment">// 도구 이름</span>
+  <span class="key">"tool_input"</span>: {                  <span class="comment">// 도구 인자</span>
+    <span class="key">"command"</span>: <span class="str">"npm test"</span>
+  }
+}
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Parallel execution -->
+    <div class="df-step">
+      <div class="df-step-num">
+        <div class="circle" style="background:var(--orange-bg);border-color:var(--orange);color:var(--orange);">4</div>
+        <div class="vline"></div>
+      </div>
+      <div class="df-step-content">
+        <h3 style="color:var(--orange)">훅 실행 (병렬)</h3>
+        <p>매칭된 모든 훅이 <strong>병렬로</strong> 실행됩니다. 동일한 명령은 자동으로 중복 제거됩니다. 각 훅 타입에 따라 실행 방식이 다릅니다.</p>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px;">
+          <div style="padding:10px 14px;background:var(--surface);border-radius:8px;border-left:3px solid var(--accent);">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:4px;">command</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">셸 명령 실행, stdin으로 JSON 수신</div>
+          </div>
+          <div style="padding:10px 14px;background:var(--surface);border-radius:8px;border-left:3px solid var(--green);">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--green);margin-bottom:4px;">http</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">JSON POST 전송, 응답 본문 수신</div>
+          </div>
+          <div style="padding:10px 14px;background:var(--surface);border-radius:8px;border-left:3px solid var(--purple);">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--purple);margin-bottom:4px;">prompt</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">LLM 1회 호출, ok/reason 반환</div>
+          </div>
+          <div style="padding:10px 14px;background:var(--surface);border-radius:8px;border-left:3px solid var(--orange);">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--orange);margin-bottom:4px;">agent</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">서브에이전트 스폰, 도구 사용 검증</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5: Output -->
+    <div class="df-step">
+      <div class="df-step-num">
+        <div class="circle" style="background:var(--red-bg);border-color:var(--red);color:var(--red);">5</div>
+        <div class="vline" style="height:0;"></div>
+      </div>
+      <div class="df-step-content">
+        <h3 style="color:var(--red)">결과 반환 (Exit Code / JSON)</h3>
+        <p>훅의 실행 결과에 따라 Claude Code가 다음 행동을 결정합니다. exit code가 기본이며, 더 세밀한 제어가 필요하면 JSON 출력을 사용합니다.</p>
+
+        <div class="exit-grid">
+          <div class="exit-card exit-green">
+            <div class="exit-code">0</div>
+            <div class="exit-label" style="color:var(--green);">허용 (Proceed)</div>
+            <div class="exit-desc">작업 진행. stdout은 Claude 컨텍스트에 추가됨</div>
+          </div>
+          <div class="exit-card exit-red">
+            <div class="exit-code">2</div>
+            <div class="exit-label" style="color:var(--red);">차단 (Block)</div>
+            <div class="exit-desc">작업 차단. stderr가 Claude에게 피드백됨</div>
+          </div>
+          <div class="exit-card exit-yellow">
+            <div class="exit-code">*</div>
+            <div class="exit-label" style="color:var(--yellow);">오류 (Error)</div>
+            <div class="exit-desc">작업 진행. stderr는 로그에만 기록 (Ctrl+O)</div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding:14px 18px;background:var(--surface);border-radius:10px;border:1px solid var(--border);">
+          <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;color:var(--cyan);">고급: 구조화된 JSON 출력</div>
+          <div class="df-code" style="margin-top:8px;">
+{
+  <span class="key">"hookSpecificOutput"</span>: {
+    <span class="key">"hookEventName"</span>: <span class="str">"PreToolUse"</span>,
+    <span class="key">"permissionDecision"</span>: <span class="str">"deny"</span>,     <span class="comment">// allow | deny | ask</span>
+    <span class="key">"permissionDecisionReason"</span>: <span class="str">"rg 사용 권장"</span>
+  }
+}
+          </div>
+          <div style="margin-top:8px;font-size:0.75rem;color:var(--text-muted);">exit 2와 JSON을 혼합하면 안 됩니다. exit 2일 때 JSON은 무시됩니다.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== Section 4: Matchers ==================== -->
+<div id="matchers" class="section">
+  <div class="section-title"><span class="icon">&#x1F3AF;</span> Matcher System</div>
+  <div class="section-desc">Matcher는 훅이 발동되는 조건을 필터링합니다. 각 이벤트 타입별로 matcher가 필터하는 대상이 다릅니다.</div>
+
+  <div class="matcher-map">
+
+    <!-- Group 1: Tool name matchers -->
+    <div class="matcher-group">
+      <div class="matcher-group-header">
+        <span class="icon">&#x1F6E0;</span>
+        <span class="title">도구 이름으로 필터</span>
+        <span class="count">4 이벤트</span>
+      </div>
+      <div class="matcher-group-body">
+        <div class="matcher-events">
+          <div class="matcher-event">
+            <span class="name" style="color:var(--orange)">PreToolUse</span>
+            <span class="examples">Bash, Edit|Write, mcp__.*</span>
+          </div>
+          <div class="matcher-event">
+            <span class="name" style="color:var(--cyan)">PostToolUse</span>
+            <span class="examples">Edit|Write, Bash</span>
+          </div>
+          <div class="matcher-event">
+            <span class="name" style="color:var(--red)">PostToolUseFailure</span>
+            <span class="examples">Bash, mcp__github__.*</span>
+          </div>
+          <div class="matcher-event">
+            <span class="name" style="color:var(--yellow)">PermissionRequest</span>
+            <span class="examples">Bash, Edit, Write</span>
+          </div>
+        </div>
+        <div class="matcher-note">
+          <strong>MCP 도구 이름 규칙:</strong> <code>mcp__&lt;서버&gt;__&lt;도구&gt;</code> 형식.<br>
+          예: <code>mcp__github__search_repositories</code>, <code>mcp__filesystem__read_file</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group 2: Session matchers -->
+    <div class="matcher-group">
+      <div class="matcher-group-header">
+        <span class="icon">&#x1F504;</span>
+        <span class="title">세션 상태로 필터</span>
+        <span class="count">2 이벤트</span>
+      </div>
+      <div class="matcher-group-body">
+        <div class="matcher-events">
+          <div class="matcher-event">
+            <span class="name" style="color:var(--accent)">SessionStart</span>
+            <span class="examples">startup, resume, clear, compact</span>
+          </div>
+          <div class="matcher-event">
+            <span class="name" style="color:var(--red)">SessionEnd</span>
+            <span class="examples">clear, logout, prompt_input_exit, other</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group 3: Agent matchers -->
+    <div class="matcher-group">
+      <div class="matcher-group-header">
+        <span class="icon">&#x1F916;</span>
+        <span class="title">에이전트 타입으로 필터</span>
+        <span class="count">2 이벤트</span>
+      </div>
+      <div class="matcher-group-body">
+        <div class="matcher-events">
+          <div class="matcher-event">
+            <span class="name" style="color:var(--purple)">SubagentStart</span>
+            <span class="examples">Bash, Explore, Plan, 커스텀 이름</span>
+          </div>
+          <div class="matcher-event">
+            <span class="name" style="color:var(--pink)">SubagentStop</span>
+            <span class="examples">Bash, Explore, Plan, 커스텀 이름</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group 4: Other matchers -->
+    <div class="matcher-group">
+      <div class="matcher-group-header">
+        <span class="icon">&#x1F50D;</span>
+        <span class="title">기타 필터 대상</span>
+        <span class="count">3 이벤트</span>
+      </div>
+      <div class="matcher-group-body">
+        <div class="matcher-events">
+          <div class="matcher-event">
+            <span class="name" style="color:var(--cyan)">Notification</span>
+            <span class="examples">permission_prompt, idle_prompt, auth_success</span>
+          </div>
+          <div class="matcher-event">
+            <span class="name" style="color:var(--pink)">PreCompact</span>
+            <span class="examples">manual, auto</span>
+          </div>
+          <div class="matcher-event">
+            <span class="name" style="color:var(--purple)">ConfigChange</span>
+            <span class="examples">user_settings, project_settings, skills</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group 5: No matcher -->
+    <div class="matcher-group">
+      <div class="matcher-group-header">
+        <span class="icon">&#x26A0;</span>
+        <span class="title" style="color:var(--yellow)">Matcher 미지원 (항상 발동)</span>
+        <span class="count">7 이벤트</span>
+      </div>
+      <div class="matcher-group-body">
+        <div class="matcher-events">
+          <div class="matcher-event"><span class="name">UserPromptSubmit</span><span class="examples" style="color:var(--text-muted);">항상 발동</span></div>
+          <div class="matcher-event"><span class="name">Stop</span><span class="examples" style="color:var(--text-muted);">항상 발동</span></div>
+          <div class="matcher-event"><span class="name">TeammateIdle</span><span class="examples" style="color:var(--text-muted);">항상 발동</span></div>
+          <div class="matcher-event"><span class="name">TaskCompleted</span><span class="examples" style="color:var(--text-muted);">항상 발동</span></div>
+          <div class="matcher-event"><span class="name">WorktreeCreate</span><span class="examples" style="color:var(--text-muted);">항상 발동</span></div>
+          <div class="matcher-event"><span class="name">WorktreeRemove</span><span class="examples" style="color:var(--text-muted);">항상 발동</span></div>
+        </div>
+        <div class="matcher-note">
+          <strong>이 이벤트들은 matcher 필드를 무시합니다.</strong> 등록하면 해당 이벤트의 모든 발생에 반응합니다.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== Section 5: Examples ==================== -->
+<div id="examples" class="section">
+  <div class="section-title"><span class="icon">&#x1F4DD;</span> Practical Examples</div>
+  <div class="section-desc">실전에서 바로 사용할 수 있는 훅 설정 예제. 각 카드에 이벤트, matcher, 타입, 저장 위치와 동작 흐름이 표시됩니다.</div>
+
+  <div class="examples-grid">
+
+    <!-- Example 1: Desktop notification -->
+    <div class="example-card">
+      <div class="example-header">
+        <span class="emoji">&#x1F514;</span>
+        <div class="info">
+          <h3>데스크톱 알림</h3>
+          <p>Claude가 입력을 기다릴 때 알림</p>
+        </div>
+      </div>
+      <div class="example-body">
+        <div class="example-tags">
+          <span class="example-tag tag-event">Notification</span>
+          <span class="example-tag tag-matcher">matcher: *</span>
+          <span class="example-tag tag-type">command</span>
+          <span class="example-tag tag-scope">전역</span>
+        </div>
+        <div class="example-desc">터미널을 계속 주시하지 않아도 Claude가 권한을 요청하거나 유휴 상태일 때 데스크톱 알림을 받습니다.</div>
+        <div class="example-code"><span style="color:var(--accent)">"Notification"</span>: [{
+  <span style="color:var(--cyan)">"matcher"</span>: <span style="color:var(--yellow)">""</span>,
+  <span style="color:var(--cyan)">"hooks"</span>: [{
+    <span style="color:var(--green)">"type"</span>: <span style="color:var(--yellow)">"command"</span>,
+    <span style="color:var(--green)">"command"</span>: <span style="color:var(--yellow)">"notify-send 'Claude' '입력 대기 중'"</span>
+  }]
+}]</div>
+        <div class="example-flow">
+          <span class="flow-chip" style="background:var(--blue-bg);color:var(--blue);">알림 발생</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--green-bg);color:var(--green);">notify-send 실행</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--purple-bg);color:var(--purple);">데스크톱 알림 표시</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Example 2: Auto format -->
+    <div class="example-card">
+      <div class="example-header">
+        <span class="emoji">&#x2728;</span>
+        <div class="info">
+          <h3>자동 코드 포맷팅</h3>
+          <p>파일 편집 후 Prettier 자동 실행</p>
+        </div>
+      </div>
+      <div class="example-body">
+        <div class="example-tags">
+          <span class="example-tag tag-event">PostToolUse</span>
+          <span class="example-tag tag-matcher">Edit|Write</span>
+          <span class="example-tag tag-type">command</span>
+          <span class="example-tag tag-scope">프로젝트</span>
+        </div>
+        <div class="example-desc">Claude가 파일을 편집할 때마다 자동으로 Prettier를 실행하여 일관된 코드 스타일을 유지합니다.</div>
+        <div class="example-code"><span style="color:var(--accent)">"PostToolUse"</span>: [{
+  <span style="color:var(--cyan)">"matcher"</span>: <span style="color:var(--yellow)">"Edit|Write"</span>,
+  <span style="color:var(--cyan)">"hooks"</span>: [{
+    <span style="color:var(--green)">"type"</span>: <span style="color:var(--yellow)">"command"</span>,
+    <span style="color:var(--green)">"command"</span>: <span style="color:var(--yellow)">"jq -r '.tool_input.file_path' | xargs npx prettier --write"</span>
+  }]
+}]</div>
+        <div class="example-flow">
+          <span class="flow-chip" style="background:var(--orange-bg);color:var(--orange);">Edit/Write 완료</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--cyan-bg);color:var(--cyan);">jq로 경로 추출</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--green-bg);color:var(--green);">Prettier 실행</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Example 3: Block protected files -->
+    <div class="example-card">
+      <div class="example-header">
+        <span class="emoji">&#x1F6E1;</span>
+        <div class="info">
+          <h3>보호 파일 편집 차단</h3>
+          <p>.env, .git/ 등 민감 파일 보호</p>
+        </div>
+      </div>
+      <div class="example-body">
+        <div class="example-tags">
+          <span class="example-tag tag-event">PreToolUse</span>
+          <span class="example-tag tag-matcher">Edit|Write</span>
+          <span class="example-tag tag-type">command (script)</span>
+          <span class="example-tag tag-scope">프로젝트</span>
+        </div>
+        <div class="example-desc">외부 스크립트에서 파일 경로를 검사하고, 보호 패턴에 매칭되면 exit 2로 차단합니다. Claude에게 차단 이유가 피드백됩니다.</div>
+        <div class="example-code"><span style="color:var(--text-muted)">#!/bin/bash</span>
+INPUT=$(cat)
+FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path')
+
+<span style="color:var(--text-muted)"># 보호 패턴 검사</span>
+if [[ "$FILE" == *<span style="color:var(--red)">".env"</span>* ]]; then
+  echo <span style="color:var(--red)">"Blocked: .env"</span> >&amp;2
+  exit <span style="color:var(--red)">2</span>   <span style="color:var(--text-muted)"># 차단!</span>
+fi
+exit <span style="color:var(--green)">0</span>     <span style="color:var(--text-muted)"># 허용</span></div>
+        <div class="example-flow">
+          <span class="flow-chip" style="background:var(--orange-bg);color:var(--orange);">Edit 시도</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--yellow-bg);color:var(--yellow);">패턴 매칭</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--red-bg);color:var(--red);">exit 2 차단</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--purple-bg);color:var(--purple);">Claude 피드백</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Example 4: Re-inject context -->
+    <div class="example-card">
+      <div class="example-header">
+        <span class="emoji">&#x1F501;</span>
+        <div class="info">
+          <h3>컨텍스트 재주입</h3>
+          <p>압축 후 핵심 정보 복원</p>
+        </div>
+      </div>
+      <div class="example-body">
+        <div class="example-tags">
+          <span class="example-tag tag-event">SessionStart</span>
+          <span class="example-tag tag-matcher">compact</span>
+          <span class="example-tag tag-type">command</span>
+          <span class="example-tag tag-scope">프로젝트</span>
+        </div>
+        <div class="example-desc">컨텍스트 압축으로 손실된 핵심 정보를 자동으로 다시 주입합니다. stdout이 Claude 컨텍스트에 추가됩니다.</div>
+        <div class="example-code"><span style="color:var(--accent)">"SessionStart"</span>: [{
+  <span style="color:var(--cyan)">"matcher"</span>: <span style="color:var(--yellow)">"compact"</span>,
+  <span style="color:var(--cyan)">"hooks"</span>: [{
+    <span style="color:var(--green)">"type"</span>: <span style="color:var(--yellow)">"command"</span>,
+    <span style="color:var(--green)">"command"</span>: <span style="color:var(--yellow)">"echo 'bun 사용, 커밋 전 bun test 실행'"</span>
+  }]
+}]</div>
+        <div class="example-flow">
+          <span class="flow-chip" style="background:var(--pink-bg);color:var(--pink);">컨텍스트 압축</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--blue-bg);color:var(--blue);">SessionStart(compact)</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--green-bg);color:var(--green);">stdout → 컨텍스트</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Example 5: Prompt hook -->
+    <div class="example-card">
+      <div class="example-header">
+        <span class="emoji">&#x1F9E0;</span>
+        <div class="info">
+          <h3>작업 완료 검증 (LLM)</h3>
+          <p>Prompt 훅으로 완료 여부 판단</p>
+        </div>
+      </div>
+      <div class="example-body">
+        <div class="example-tags">
+          <span class="example-tag tag-event">Stop</span>
+          <span class="example-tag tag-type">prompt</span>
+          <span class="example-tag tag-scope">프로젝트</span>
+        </div>
+        <div class="example-desc">Claude가 응답을 완료하면 LLM이 모든 작업이 끝났는지 판단합니다. 미완료 시 reason이 Claude에게 다음 지시로 전달됩니다.</div>
+        <div class="example-code"><span style="color:var(--accent)">"Stop"</span>: [{
+  <span style="color:var(--cyan)">"hooks"</span>: [{
+    <span style="color:var(--green)">"type"</span>: <span style="color:var(--yellow)">"prompt"</span>,
+    <span style="color:var(--green)">"prompt"</span>: <span style="color:var(--yellow)">"모든 작업이 완료되었는지 확인.
+    미완료 시 {\"ok\": false, \"reason\": \"남은 작업\"}"</span>
+  }]
+}]</div>
+        <div class="example-flow">
+          <span class="flow-chip" style="background:var(--green-bg);color:var(--green);">Claude 응답 완료</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--purple-bg);color:var(--purple);">LLM 판단</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--yellow-bg);color:var(--yellow);">ok:false → 계속 작업</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Example 6: Agent hook -->
+    <div class="example-card">
+      <div class="example-header">
+        <span class="emoji">&#x1F916;</span>
+        <div class="info">
+          <h3>테스트 통과 검증 (Agent)</h3>
+          <p>서브에이전트가 테스트 실행 후 확인</p>
+        </div>
+      </div>
+      <div class="example-body">
+        <div class="example-tags">
+          <span class="example-tag tag-event">Stop</span>
+          <span class="example-tag tag-type">agent</span>
+          <span class="example-tag tag-scope">프로젝트</span>
+        </div>
+        <div class="example-desc">Claude 응답 완료 시 서브에이전트가 실제로 테스트를 실행하여 통과 여부를 확인합니다. 파일 읽기, 명령 실행이 가능합니다.</div>
+        <div class="example-code"><span style="color:var(--accent)">"Stop"</span>: [{
+  <span style="color:var(--cyan)">"hooks"</span>: [{
+    <span style="color:var(--green)">"type"</span>: <span style="color:var(--yellow)">"agent"</span>,
+    <span style="color:var(--green)">"prompt"</span>: <span style="color:var(--yellow)">"테스트 스위트 실행 후 결과 확인"</span>,
+    <span style="color:var(--green)">"timeout"</span>: <span style="color:var(--orange)">120</span>
+  }]
+}]</div>
+        <div class="example-flow">
+          <span class="flow-chip" style="background:var(--green-bg);color:var(--green);">Claude 완료</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--orange-bg);color:var(--orange);">Agent 스폰</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--cyan-bg);color:var(--cyan);">테스트 실행</span>
+          <span class="flow-arrow-r">&#x2192;</span>
+          <span class="flow-chip" style="background:var(--purple-bg);color:var(--purple);">ok/reason</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== Section 6: Config & Scope ==================== -->
+<div id="config" class="section">
+  <div class="section-title"><span class="icon">&#x2699;</span> Config & Scope</div>
+  <div class="section-desc">Hook 설정 파일의 위치에 따라 적용 범위가 달라집니다. 넓은 범위(조직) → 좁은 범위(개인 로컬) 순서로 우선순위가 적용됩니다.</div>
+
+  <!-- Scope Pyramid -->
+  <div class="scope-pyramid">
+    <div class="scope-level" style="width:90%;background:rgba(248,113,113,0.06);border-color:rgba(248,113,113,0.3);">
+      <div>
+        <div class="label" style="color:var(--red);">Managed Policy</div>
+        <div class="path" style="color:var(--text-muted);">조직 관리자 정책 설정</div>
+        <div class="info" style="color:var(--text-muted);">범위: 조직 전체 &nbsp;|&nbsp; 관리자 제어</div>
+      </div>
+    </div>
+    <div class="scope-level" style="width:76%;background:rgba(96,165,250,0.06);border-color:rgba(96,165,250,0.3);">
+      <div>
+        <div class="label" style="color:var(--blue);">User Settings</div>
+        <div class="path">~/.claude/settings.json</div>
+        <div class="info" style="color:var(--text-muted);">범위: 모든 프로젝트 &nbsp;|&nbsp; 로컬 전용</div>
+      </div>
+    </div>
+    <div class="scope-level" style="width:62%;background:rgba(167,139,250,0.06);border-color:rgba(167,139,250,0.3);">
+      <div>
+        <div class="label" style="color:var(--purple);">Project Settings</div>
+        <div class="path">.claude/settings.json</div>
+        <div class="info" style="color:var(--text-muted);">범위: 단일 프로젝트 &nbsp;|&nbsp; Git 커밋 가능 (팀 공유)</div>
+      </div>
+    </div>
+    <div class="scope-level" style="width:48%;background:rgba(251,191,36,0.06);border-color:rgba(251,191,36,0.3);">
+      <div>
+        <div class="label" style="color:var(--yellow);">Local Settings</div>
+        <div class="path">.claude/settings.local.json</div>
+        <div class="info" style="color:var(--text-muted);">범위: 단일 프로젝트 &nbsp;|&nbsp; gitignore (개인 전용)</div>
+      </div>
+    </div>
+    <div class="scope-level" style="width:34%;background:rgba(74,222,128,0.06);border-color:rgba(74,222,128,0.3);border-radius:0 0 12px 12px !important;">
+      <div>
+        <div class="label" style="color:var(--green);">Plugin / Skill / Agent</div>
+        <div class="path">hooks/hooks.json &nbsp;|&nbsp; frontmatter</div>
+        <div class="info" style="color:var(--text-muted);">범위: 활성화 시 &nbsp;|&nbsp; 컴포넌트 내장</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail cards -->
+  <div class="scope-detail-grid" style="margin-top:32px;">
+    <div class="scope-detail-card">
+      <h4 style="color:var(--blue);">&#x1F310; 전역 (User)</h4>
+      <div class="path">~/.claude/settings.json</div>
+      <div class="desc">모든 프로젝트에 적용되는 개인 설정. 데스크톱 알림, 감사 로그 등 프로젝트에 무관한 훅에 적합합니다.</div>
+      <div class="badges">
+        <span class="badge-sm badge-global">모든 프로젝트</span>
+        <span class="badge-sm badge-local">로컬 전용</span>
+      </div>
+    </div>
+    <div class="scope-detail-card">
+      <h4 style="color:var(--purple);">&#x1F4C1; 프로젝트 (Project)</h4>
+      <div class="path">.claude/settings.json</div>
+      <div class="desc">특정 프로젝트에만 적용. Git에 커밋하여 팀원과 공유할 수 있습니다. 포맷터, 린터, 보호 파일 규칙 등.</div>
+      <div class="badges">
+        <span class="badge-sm badge-project">단일 프로젝트</span>
+        <span class="badge-sm badge-share">공유 가능</span>
+      </div>
+    </div>
+    <div class="scope-detail-card">
+      <h4 style="color:var(--yellow);">&#x1F512; 로컬 (Local)</h4>
+      <div class="path">.claude/settings.local.json</div>
+      <div class="desc">프로젝트 내 개인 설정. gitignore되어 커밋되지 않습니다. 개인 개발 환경 특화 훅에 적합합니다.</div>
+      <div class="badges">
+        <span class="badge-sm badge-project">단일 프로젝트</span>
+        <span class="badge-sm badge-local">비공유</span>
+      </div>
+    </div>
+    <div class="scope-detail-card">
+      <h4 style="color:var(--green);">&#x1F9E9; 컴포넌트 내장</h4>
+      <div class="path">Plugin hooks/ | Skill/Agent frontmatter</div>
+      <div class="desc">플러그인, 스킬, 에이전트에 훅을 내장합니다. 컴포넌트가 활성화될 때만 작동합니다.</div>
+      <div class="badges">
+        <span class="badge-sm badge-share">공유 가능</span>
+        <span class="badge-sm" style="background:var(--orange-bg);color:var(--orange);border:1px solid rgba(251,146,60,0.2);">활성화 시</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <div style="margin-top:32px;padding:20px 24px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;">
+    <h3 style="font-size:1rem;margin-bottom:12px;color:var(--accent);">설정 팁</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:0.85rem;color:var(--text-dim);">
+      <div>&#x2022; <code>/hooks</code> 메뉴로 추가한 훅 &#x2192; <strong style="color:var(--green);">즉시 반영</strong></div>
+      <div>&#x2022; 설정 파일 직접 편집 &#x2192; <code>/hooks</code> 메뉴에서 확인하거나 <strong style="color:var(--yellow);">세션 재시작</strong> 필요</div>
+      <div>&#x2022; 모든 훅 비활성화: 설정에 <code style="color:var(--cyan);">"disableAllHooks": true</code> 추가 또는 <code>/hooks</code> 메뉴 하단 토글</div>
+      <div>&#x2022; HTTP 훅은 <code>/hooks</code> 메뉴에서 설정 불가 &#x2192; JSON 직접 편집 필요</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Section 7: Troubleshooting ==================== -->
+<div id="trouble" class="section">
+  <div class="section-title"><span class="icon">&#x1F6A8;</span> Troubleshooting</div>
+  <div class="section-desc">자주 발생하는 문제와 해결 방법. 각 카드에 증상, 원인, 해결책이 정리되어 있습니다.</div>
+
+  <div class="trouble-grid">
+
+    <div class="trouble-card">
+      <div class="trouble-header">
+        <span class="icon">&#x1F6AB;</span>
+        <h4>훅이 발동하지 않음</h4>
+      </div>
+      <div class="trouble-body">
+        <div class="trouble-cause">설정한 훅이 실행되지 않는 경우. Matcher 패턴 불일치, 잘못된 이벤트 타입, 비대화형 모드에서 PermissionRequest 사용 등이 원인일 수 있습니다.</div>
+        <div class="trouble-fix">
+          <span class="check">&#x2713;</span>
+          <div><code>/hooks</code>에서 올바른 이벤트 아래 표시 확인<br>Matcher 대소문자 일치 확인<br>PermissionRequest → PreToolUse 변경 (비대화형)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="trouble-card">
+      <div class="trouble-header">
+        <span class="icon">&#x274C;</span>
+        <h4>"hook error" 메시지</h4>
+      </div>
+      <div class="trouble-body">
+        <div class="trouble-cause">스크립트가 예기치 않게 비정상 종료. "command not found", "jq not found", 실행 권한 없음 등.</div>
+        <div class="trouble-fix">
+          <span class="check">&#x2713;</span>
+          <div>수동 테스트: <code>echo '{"tool_name":"Bash"}' | ./hook.sh</code><br><code>chmod +x</code>로 실행 권한 부여<br>절대 경로 또는 <code>$CLAUDE_PROJECT_DIR</code> 사용</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="trouble-card">
+      <div class="trouble-header">
+        <span class="icon">&#x1F504;</span>
+        <h4>Stop 훅 무한 루프</h4>
+      </div>
+      <div class="trouble-body">
+        <div class="trouble-cause">Claude가 멈추지 않고 계속 작업. Stop 훅이 자기 자신을 재발동시키는 경우.</div>
+        <div class="trouble-fix">
+          <span class="check">&#x2713;</span>
+          <div><code>stop_hook_active</code> 필드 확인:<br><code>if [ "$(jq -r '.stop_hook_active')" = "true" ]; then exit 0; fi</code></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="trouble-card">
+      <div class="trouble-header">
+        <span class="icon">&#x1F4CB;</span>
+        <h4>JSON 파싱 실패</h4>
+      </div>
+      <div class="trouble-body">
+        <div class="trouble-cause">셸 프로필(~/.zshrc)의 echo 출력이 JSON 앞에 섞여 파싱 오류 발생.</div>
+        <div class="trouble-fix">
+          <span class="check">&#x2713;</span>
+          <div>대화형 셸 조건 추가:<br><code>if [[ $- == *i* ]]; then echo "ready"; fi</code><br>훅은 비대화형 셸에서 실행됨</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="trouble-card">
+      <div class="trouble-header">
+        <span class="icon">&#x1F441;</span>
+        <h4>/hooks에 훅 미표시</h4>
+      </div>
+      <div class="trouble-body">
+        <div class="trouble-cause">설정 파일을 직접 편집했지만 메뉴에 나타나지 않는 경우.</div>
+        <div class="trouble-fix">
+          <span class="check">&#x2713;</span>
+          <div>세션 재시작 또는 <code>/hooks</code> 메뉴에서 리로드<br>JSON 유효성 확인 (후행 쉼표, 주석 불가)<br>파일 위치 확인</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="trouble-card">
+      <div class="trouble-header">
+        <span class="icon">&#x26A0;</span>
+        <h4>주요 제한사항</h4>
+      </div>
+      <div class="trouble-body">
+        <div class="trouble-cause">알아두어야 할 훅 시스템의 제한사항들.</div>
+        <div class="trouble-fix">
+          <span class="check">&#x2713;</span>
+          <div>PostToolUse로 이미 실행된 작업 되돌리기 불가<br>기본 타임아웃 10분 (timeout 필드로 조정)<br>Stop은 사용자 인터럽트(Ctrl+C) 시 미발동</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Debug tools -->
+  <h3 style="font-size:1.1rem;margin-bottom:16px;">디버깅 도구</h3>
+  <div class="debug-tools">
+    <div class="debug-tool">
+      <div class="shortcut" style="color:var(--accent);">Ctrl + O</div>
+      <div class="label">Verbose 모드 토글</div>
+      <div class="desc">트랜스크립트에서 훅 출력 확인.<br>stderr 메시지, 매칭 결과 표시.</div>
+    </div>
+    <div class="debug-tool">
+      <div class="shortcut" style="color:var(--orange);">claude --debug</div>
+      <div class="label">전체 디버그 모드</div>
+      <div class="desc">매칭된 훅, exit code, 실행 시간 등<br>전체 실행 상세 정보 출력.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+
+</body>
+</html>

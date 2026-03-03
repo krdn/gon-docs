@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>gons-evolve — Claude Code 스킬 저장소</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0e1a;
+  --surface: #131829;
+  --surface2: #1c2340;
+  --surface3: #252d4a;
+  --border: #2a3358;
+  --border-hover: #4a5580;
+  --text: #e2e8f0;
+  --text-dim: #8892b0;
+  --text-muted: #5a6380;
+  --accent: #38bdf8;
+  --accent2: #818cf8;
+  --purple: #a78bfa;
+  --purple-bg: rgba(167,139,250,0.08);
+  --green: #4ade80;
+  --green-bg: rgba(74,222,128,0.08);
+  --yellow: #fbbf24;
+  --yellow-bg: rgba(251,191,36,0.08);
+  --orange: #fb923c;
+  --orange-bg: rgba(251,146,60,0.08);
+  --pink: #f472b6;
+  --pink-bg: rgba(244,114,182,0.08);
+  --red: #f87171;
+  --red-bg: rgba(248,113,113,0.08);
+  --cyan: #22d3ee;
+  --cyan-bg: rgba(34,211,238,0.08);
+  --blue: #60a5fa;
+  --blue-bg: rgba(96,165,250,0.08);
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+code, .mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ── Header ─────────────────────────────────── */
+.header {
+  text-align: center;
+  padding: 56px 24px 40px;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  border-bottom: 1px solid var(--border);
+}
+.header h1 {
+  font-size: 2.4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+.header p { color: var(--text-dim); font-size: 1.05rem; }
+.header-meta {
+  display: inline-flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.header-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ── Nav ─────────────────────────────────────── */
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.nav-btn {
+  padding: 8px 18px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.25s;
+}
+.nav-btn:hover { background: var(--surface3); color: var(--text); border-color: var(--border-hover); }
+.nav-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--orange));
+  color: var(--bg);
+  border-color: transparent;
+  box-shadow: 0 2px 12px rgba(56,189,248,0.25);
+}
+
+/* ── Sections ────────────────────────────────── */
+.section {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  display: none;
+}
+.section.active { display: block; animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.section-desc {
+  color: var(--text-dim);
+  margin-bottom: 36px;
+  font-size: 0.95rem;
+}
+
+/* ── Card ────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+}
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.card-desc { font-size: 0.875rem; color: var(--text-dim); line-height: 1.6; }
+
+/* ── Grid ────────────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+/* ── Badge ───────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge-blue { background: var(--blue-bg); color: var(--blue); }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+.badge-purple { background: var(--purple-bg); color: var(--purple); }
+.badge-cyan { background: var(--cyan-bg); color: var(--cyan); }
+.badge-orange { background: var(--orange-bg); color: var(--orange); }
+.badge-pink { background: var(--pink-bg); color: var(--pink); }
+
+/* ── Code Panel ──────────────────────────────── */
+.code-panel {
+  background: #161625;
+  border: 1px solid #2a2a40;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+.code-header {
+  background: #1e1e35;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  border-bottom: 1px solid #2a2a40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.code-body {
+  padding: 18px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.8;
+  overflow-x: auto;
+  color: var(--text);
+}
+.code-body .kw { color: var(--purple); }
+.code-body .str { color: var(--green); }
+.code-body .cmt { color: var(--text-muted); font-style: italic; }
+.code-body .key { color: var(--accent); }
+.code-body .val { color: var(--orange); }
+
+/* ── Table ───────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.data-table th {
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-weight: 600;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--surface2); }
+
+/* ── Section 1: Overview — 계층도 ────────────── */
+.tree-root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tree-node {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.tree-node-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tree-node-header:hover { background: var(--surface2); }
+.tree-node-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.tree-node-label { font-weight: 700; font-size: 0.95rem; }
+.tree-node-sub { color: var(--text-dim); font-size: 0.82rem; margin-left: auto; }
+.tree-node-body {
+  display: none;
+  padding: 0 18px 16px 60px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.tree-node-body.open { display: block; }
+.tree-leaf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  border-bottom: 1px dashed var(--border);
+}
+.tree-leaf:last-child { border-bottom: none; }
+.tree-leaf-name { color: var(--text); font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.tree-leaf-path { color: var(--text-muted); font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; margin-left: auto; }
+.tree-chevron {
+  margin-left: auto;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  font-size: 0.75rem;
+}
+.tree-chevron.open { transform: rotate(90deg); }
+
+/* ── Section 2: Skills ────────────────────────── */
+.skill-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.skill-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.skill-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+.skill-card-head {
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.skill-card-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.skill-card-desc { color: var(--text-dim); font-size: 0.875rem; margin-bottom: 10px; }
+.skill-card-body { padding: 16px 22px 20px; }
+.skill-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  font-size: 0.8rem;
+  margin-bottom: 14px;
+}
+.skill-meta-key { color: var(--text-muted); font-weight: 600; }
+.skill-meta-val { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+.skill-cmds { display: flex; flex-direction: column; gap: 4px; }
+.skill-cmd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background: var(--surface2);
+  border-radius: 6px;
+  font-size: 0.78rem;
+}
+.skill-cmd-name { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 700; }
+.skill-cmd-desc { color: var(--text-dim); }
+
+/* ── Section 3: Hooks — 플로우차트 ──────────── */
+.flow-container { display: flex; flex-direction: column; gap: 40px; }
+.flow-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.flow-nodes { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.flow-node {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 20px;
+  text-align: center;
+  position: relative;
+  transition: border-color 0.2s;
+}
+.flow-node:hover { border-color: var(--border-hover); }
+.flow-node.start { border-color: var(--accent); background: rgba(56,189,248,0.06); }
+.flow-node.decision {
+  border-color: var(--yellow);
+  background: var(--yellow-bg);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  padding: 20px 40px;
+  max-width: 360px;
+}
+.flow-node.action { border-color: var(--purple); background: var(--purple-bg); }
+.flow-node.success { border-color: var(--green); background: var(--green-bg); }
+.flow-node.error { border-color: var(--red); background: var(--red-bg); }
+.flow-node-label { font-size: 0.875rem; font-weight: 600; }
+.flow-node-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  background: var(--border);
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.flow-arrow::after {
+  content: '▼';
+  font-size: 10px;
+  color: var(--border-hover);
+  position: absolute;
+  bottom: -2px;
+}
+.flow-branch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+  max-width: 640px;
+}
+.flow-branch-item { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.flow-branch-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+.flow-branch-label.yes { background: var(--green-bg); color: var(--green); }
+.flow-branch-label.no { background: var(--red-bg); color: var(--red); }
+
+/* ── Section 4: Sync — 관계도 ───────────────── */
+.sync-layout { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: start; }
+.sync-col-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+.sync-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+  cursor: default;
+}
+.sync-item:hover { border-color: var(--border-hover); }
+.sync-item-name { font-weight: 700; font-size: 0.875rem; font-family: 'JetBrains Mono', monospace; }
+.sync-item-path { font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+.sync-item-type { float: right; }
+.sync-arrow-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 40px;
+  gap: 8px;
+}
+.sync-arrow-main {
+  font-size: 1.5rem;
+  color: var(--accent);
+}
+.sync-arrow-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+/* ── Section 5: Evolve — 타임라인 ───────────── */
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--orange), var(--purple));
+}
+.timeline-item { position: relative; margin-bottom: 28px; }
+.timeline-dot {
+  position: absolute;
+  left: -26px;
+  top: 14px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+.timeline-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  transition: border-color 0.2s;
+}
+.timeline-card:hover { border-color: var(--border-hover); }
+.timeline-step {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+.timeline-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+.timeline-desc { font-size: 0.82rem; color: var(--text-dim); }
+
+/* ── Overview stats ──────────────────────────── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 36px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 18px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: var(--border-hover); }
+.stat-num {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-label { font-size: 0.78rem; color: var(--text-dim); }
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 900px) {
+  .skill-grid { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .sync-layout { grid-template-columns: 1fr; }
+  .sync-arrow-col { flex-direction: row; padding-top: 0; }
+  .sync-arrow-main { transform: rotate(90deg); }
+}
+@media (max-width: 600px) {
+  .header h1 { font-size: 1.8rem; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .flow-branch { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────── -->
+<div class="header">
+  <h1>gons-evolve</h1>
+  <p>Claude Code 스킬, Git 훅, 에이전트를 개발하고 배포하는 단일 소스 저장소</p>
+  <div class="header-meta">
+    <span class="badge badge-blue">스킬 4개</span>
+    <span class="badge badge-orange">훅 2개</span>
+    <span class="badge badge-purple">에이전트 1개</span>
+    <span class="badge badge-cyan">gon: 네임스페이스</span>
+    <span class="badge badge-green">sync.sh 배포</span>
+  </div>
+</div>
+
+<!-- ── Nav ────────────────────────────────────── -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showSection('overview')">개요</button>
+  <button class="nav-btn" onclick="showSection('skills')">스킬</button>
+  <button class="nav-btn" onclick="showSection('hooks')">Git 훅</button>
+  <button class="nav-btn" onclick="showSection('sync')">동기화 시스템</button>
+  <button class="nav-btn" onclick="showSection('evolve')">Evolve 흐름</button>
+</nav>
+
+<!-- ────────────────────────────────────────────── -->
+<!-- Section 1: Overview ─────────────────────────── -->
+<section class="section active" id="overview">
+  <h2 class="section-title">프로젝트 구조 개요</h2>
+  <p class="section-desc">소스 저장소에서 <code>~/.claude/</code>로 배포되는 전체 구성 요소</p>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--accent)">4</div>
+      <div class="stat-label">Claude Code 스킬</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--orange)">2</div>
+      <div class="stat-label">Git 훅</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--purple)">1</div>
+      <div class="stat-label">에이전트</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--green)">7</div>
+      <div class="stat-label">sync.json 항목</div>
+    </div>
+  </div>
+
+  <div class="tree-root">
+
+    <!-- Skills -->
+    <div class="tree-node">
+      <div class="tree-node-header" onclick="toggleTree(this)">
+        <div class="tree-node-icon" style="background:rgba(56,189,248,0.12)">⚡</div>
+        <div>
+          <div class="tree-node-label">skills/</div>
+          <div style="font-size:0.78rem;color:var(--text-muted)">Claude Code 스킬 소스 (4개)</div>
+        </div>
+        <span class="tree-node-sub">→ ~/.claude/skills/</span>
+        <span class="tree-chevron">▶</span>
+      </div>
+      <div class="tree-node-body">
+        <div class="tree-leaf">
+          <span class="badge badge-cyan" style="flex-shrink:0">skill</span>
+          <span class="tree-leaf-name">smart-todo/</span>
+          <span style="color:var(--text-dim);font-size:0.8rem">지능형 TODO 자동 수집 스킬</span>
+          <span class="tree-leaf-path">→ gon:todo</span>
+        </div>
+        <div class="tree-leaf">
+          <span class="badge badge-cyan" style="flex-shrink:0">skill</span>
+          <span class="tree-leaf-name">save-issue/</span>
+          <span style="color:var(--text-dim);font-size:0.8rem">커밋→푸시→이슈 자동화</span>
+          <span class="tree-leaf-path">→ gon:save-issue</span>
+        </div>
+        <div class="tree-leaf">
+          <span class="badge badge-cyan" style="flex-shrink:0">skill</span>
+          <span class="tree-leaf-name">evolve/</span>
+          <span style="color:var(--text-dim);font-size:0.8rem">재귀적 자기 개선 스킬</span>
+          <span class="tree-leaf-path">→ gon:evolve</span>
+        </div>
+        <div class="tree-leaf">
+          <span class="badge badge-cyan" style="flex-shrink:0">skill</span>
+          <span class="tree-leaf-name">doc-graph/</span>
+          <span style="color:var(--text-dim);font-size:0.8rem">문서 시각화 그래프 생성</span>
+          <span class="tree-leaf-path">→ gon:doc-graph</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hooks -->
+    <div class="tree-node">
+      <div class="tree-node-header" onclick="toggleTree(this)">
+        <div class="tree-node-icon" style="background:rgba(251,146,60,0.12)">🪝</div>
+        <div>
+          <div class="tree-node-label">hooks/</div>
+          <div style="font-size:0.78rem;color:var(--text-muted)">Git 훅 소스 (2개)</div>
+        </div>
+        <span class="tree-node-sub">→ ~/.claude/hooks/</span>
+        <span class="tree-chevron">▶</span>
+      </div>
+      <div class="tree-node-body">
+        <div class="tree-leaf">
+          <span class="badge badge-orange" style="flex-shrink:0">hook</span>
+          <span class="tree-leaf-name">pre-commit</span>
+          <span style="color:var(--text-dim);font-size:0.8rem">민감 파일 커밋 차단 + 프로젝트 훅 체이닝</span>
+          <span class="tree-leaf-path">chmod +x</span>
+        </div>
+        <div class="tree-leaf">
+          <span class="badge badge-orange" style="flex-shrink:0">hook</span>
+          <span class="tree-leaf-name">post-commit</span>
+          <span style="color:var(--text-dim);font-size:0.8rem">커밋 후 프로젝트별 훅 체이닝</span>
+          <span class="tree-leaf-path">chmod +x</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agents -->
+    <div class="tree-node">
+      <div class="tree-node-header" onclick="toggleTree(this)">
+        <div class="tree-node-icon" style="background:rgba(167,139,250,0.12)">🤖</div>
+        <div>
+          <div class="tree-node-label">agents/</div>
+          <div style="font-size:0.78rem;color:var(--text-muted)">Claude Code 에이전트 (1개)</div>
+        </div>
+        <span class="tree-node-sub">→ ~/.claude/agents/</span>
+        <span class="tree-chevron">▶</span>
+      </div>
+      <div class="tree-node-body">
+        <div class="tree-leaf">
+          <span class="badge badge-purple" style="flex-shrink:0">agent</span>
+          <span class="tree-leaf-name">evolve-analyzer.md</span>
+          <span style="color:var(--text-dim);font-size:0.8rem">코드베이스 분석 전문 에이전트 (gon:evolve 스폰)</span>
+          <span class="tree-leaf-path">→ evolve-analyzer</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <div class="tree-node">
+      <div class="tree-node-header" onclick="toggleTree(this)">
+        <div class="tree-node-icon" style="background:rgba(74,222,128,0.12)">⚙️</div>
+        <div>
+          <div class="tree-node-label">scripts/ + sync.json</div>
+          <div style="font-size:0.78rem;color:var(--text-muted)">동기화 시스템</div>
+        </div>
+        <span class="tree-node-sub">배포 자동화</span>
+        <span class="tree-chevron">▶</span>
+      </div>
+      <div class="tree-node-body">
+        <div class="tree-leaf">
+          <span class="badge badge-green" style="flex-shrink:0">script</span>
+          <span class="tree-leaf-name">sync.sh</span>
+          <span style="color:var(--text-dim);font-size:0.8rem">dry-run, 전체/부분 동기화, 유효성 검사</span>
+          <span class="tree-leaf-path">jq + rsync</span>
+        </div>
+        <div class="tree-leaf">
+          <span class="badge badge-green" style="flex-shrink:0">config</span>
+          <span class="tree-leaf-name">sync.json</span>
+          <span style="color:var(--text-dim);font-size:0.8rem">소스↔설치 위치 매핑, exclude_patterns</span>
+          <span class="tree-leaf-path">version 1.0.0</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end tree-root -->
+
+  <!-- deploy path visualization -->
+  <div style="margin-top:36px">
+    <div class="section-title" style="font-size:1.1rem;margin-bottom:16px">배포 경로</div>
+    <div class="card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:20px 24px">
+      <div style="text-align:center">
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">소스</div>
+        <div class="badge badge-blue" style="font-size:0.82rem;padding:6px 14px">gons-evolve/</div>
+      </div>
+      <div style="flex:1;text-align:center;color:var(--text-muted);font-size:1.2rem">→</div>
+      <div style="text-align:center">
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">명령어</div>
+        <code style="background:var(--surface2);border:1px solid var(--border);padding:6px 12px;border-radius:6px;font-size:0.8rem;color:var(--accent)">scripts/sync.sh</code>
+      </div>
+      <div style="flex:1;text-align:center;color:var(--text-muted);font-size:1.2rem">→</div>
+      <div style="text-align:center">
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">설치 위치</div>
+        <div class="badge badge-green" style="font-size:0.82rem;padding:6px 14px">~/.claude/</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────── -->
+<!-- Section 2: Skills ──────────────────────────── -->
+<section class="section" id="skills">
+  <h2 class="section-title">스킬 상세</h2>
+  <p class="section-desc">각 스킬의 역할, 명령어, 설치 경로를 확인합니다.</p>
+
+  <div class="skill-grid">
+
+    <!-- gon:todo -->
+    <div class="skill-card">
+      <div class="skill-card-head" style="border-left:4px solid var(--accent)">
+        <div class="skill-card-name" style="color:var(--accent)">/gon:todo</div>
+        <div class="skill-card-desc">대화 중 자동으로 TODO를 포착하고 프로젝트별로 관리하는 스킬</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="badge badge-cyan">v1.0</span>
+          <span class="badge badge-blue">smart-todo</span>
+        </div>
+      </div>
+      <div class="skill-card-body">
+        <div class="skill-meta">
+          <span class="skill-meta-key">소스</span>
+          <span class="skill-meta-val">skills/smart-todo/</span>
+          <span class="skill-meta-key">설치</span>
+          <span class="skill-meta-val">~/.claude/skills/gon:todo/</span>
+          <span class="skill-meta-key">저장소</span>
+          <span class="skill-meta-val">.todos/backlog.json</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em">서브커맨드</div>
+        <div class="skill-cmds">
+          <div class="skill-cmd"><span class="skill-cmd-name">add</span><span class="skill-cmd-desc">TODO 항목 추가</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">show</span><span class="skill-cmd-desc">목록 조회</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">done</span><span class="skill-cmd-desc">완료 처리</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">delete</span><span class="skill-cmd-desc">삭제</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">priority</span><span class="skill-cmd-desc">우선순위 변경</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">report</span><span class="skill-cmd-desc">리포트 생성</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- gon:save-issue -->
+    <div class="skill-card">
+      <div class="skill-card-head" style="border-left:4px solid var(--orange)">
+        <div class="skill-card-name" style="color:var(--orange)">/gon:save-issue</div>
+        <div class="skill-card-desc">작업 완료 후 커밋→푸시→GitHub 이슈 등록을 자동화하는 스킬</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="badge badge-orange">v1.2.0</span>
+          <span class="badge badge-blue">save-issue</span>
+        </div>
+      </div>
+      <div class="skill-card-body">
+        <div class="skill-meta">
+          <span class="skill-meta-key">소스</span>
+          <span class="skill-meta-val">skills/save-issue/</span>
+          <span class="skill-meta-key">설치</span>
+          <span class="skill-meta-val">~/.claude/skills/gon:save-issue/</span>
+          <span class="skill-meta-key">라벨 매핑</span>
+          <span class="skill-meta-val">feat→enhancement, fix→bug, docs→documentation</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em">서브커맨드</div>
+        <div class="skill-cmds">
+          <div class="skill-cmd"><span class="skill-cmd-name">(기본)</span><span class="skill-cmd-desc">전체 자동화 실행</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">--dry-run</span><span class="skill-cmd-desc">변경 미리보기</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">--closes 123</span><span class="skill-cmd-desc">이슈 #123 닫기</span></div>
+        </div>
+        <div style="margin-top:12px;padding:10px 12px;background:var(--yellow-bg);border-radius:8px;font-size:0.78rem;color:var(--yellow)">
+          ⚠️ 2단계 안전 방식: 이슈 먼저 생성 → 기존 라벨 조회 후 안전 추가
+        </div>
+      </div>
+    </div>
+
+    <!-- gon:evolve -->
+    <div class="skill-card">
+      <div class="skill-card-head" style="border-left:4px solid var(--purple)">
+        <div class="skill-card-name" style="color:var(--purple)">/gon:evolve</div>
+        <div class="skill-card-desc">저장소 전체를 분석하고 개선안을 도출→적용→배포하는 재귀적 자기 개선 스킬</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="badge badge-purple">evolve</span>
+          <span class="badge badge-yellow">evolve-analyzer 스폰</span>
+        </div>
+      </div>
+      <div class="skill-card-body">
+        <div class="skill-meta">
+          <span class="skill-meta-key">소스</span>
+          <span class="skill-meta-val">skills/evolve/</span>
+          <span class="skill-meta-key">설치</span>
+          <span class="skill-meta-val">~/.claude/skills/gon:evolve/</span>
+          <span class="skill-meta-key">이력 파일</span>
+          <span class="skill-meta-val">evolution-log.json (append-only)</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em">서브커맨드</div>
+        <div class="skill-cmds">
+          <div class="skill-cmd"><span class="skill-cmd-name">(기본)</span><span class="skill-cmd-desc">전체 진화 사이클</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">analyze</span><span class="skill-cmd-desc">분석만 (적용 없이)</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">history</span><span class="skill-cmd-desc">진화 이력 조회</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- gon:doc-graph -->
+    <div class="skill-card">
+      <div class="skill-card-head" style="border-left:4px solid var(--green)">
+        <div class="skill-card-name" style="color:var(--green)">/gon:doc-graph</div>
+        <div class="skill-card-desc">URL, PDF, 마크다운, 디렉토리를 분석하여 인터랙티브 HTML 시각화를 생성하는 스킬</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="badge badge-green">doc-graph</span>
+          <span class="badge badge-blue">다크테마 HTML</span>
+        </div>
+      </div>
+      <div class="skill-card-body">
+        <div class="skill-meta">
+          <span class="skill-meta-key">소스</span>
+          <span class="skill-meta-val">skills/doc-graph/</span>
+          <span class="skill-meta-key">설치</span>
+          <span class="skill-meta-val">~/.claude/skills/gon:doc-graph/</span>
+          <span class="skill-meta-key">출력</span>
+          <span class="skill-meta-val">{이름}.md + {이름}-graph.html</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em">지원 입력</div>
+        <div class="skill-cmds">
+          <div class="skill-cmd"><span class="skill-cmd-name">URL</span><span class="skill-cmd-desc">http:// / https:// 웹 문서</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">.pdf</span><span class="skill-cmd-desc">로컬 PDF 파일</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">.md</span><span class="skill-cmd-desc">마크다운 파일</span></div>
+          <div class="skill-cmd"><span class="skill-cmd-name">. / 경로</span><span class="skill-cmd-desc">프로젝트 디렉토리 분석</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end skill-grid -->
+
+  <!-- SKILL.md 필수 필드 -->
+  <div style="margin-top:32px">
+    <div class="section-title" style="font-size:1.05rem;margin-bottom:14px">SKILL.md 필수 frontmatter 필드</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>필드</th>
+            <th>예시 값</th>
+            <th>설명</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code style="color:var(--accent)">name</code></td>
+            <td><code style="color:var(--green)">gon:todo</code></td>
+            <td><span style="color:var(--text-dim)">스킬 식별자 (gon: 접두어 필수)</span></td>
+          </tr>
+          <tr>
+            <td><code style="color:var(--accent)">description</code></td>
+            <td><code style="color:var(--green)">TODO 관리 스킬</code></td>
+            <td><span style="color:var(--text-dim)">역할 설명 (트리거 키워드 포함 권장)</span></td>
+          </tr>
+          <tr>
+            <td><code style="color:var(--accent)">version</code></td>
+            <td><code style="color:var(--green)">1.0.0</code></td>
+            <td><span style="color:var(--text-dim)">semver 형식</span></td>
+          </tr>
+          <tr>
+            <td><code style="color:var(--accent)">model</code></td>
+            <td><code style="color:var(--green)">claude-haiku-4-5</code></td>
+            <td><span style="color:var(--text-dim)">실행할 Claude 모델</span></td>
+          </tr>
+          <tr>
+            <td><code style="color:var(--accent)">context</code></td>
+            <td><code style="color:var(--green)">fork</code></td>
+            <td><span style="color:var(--text-dim)">별도 프로세스에서 실행</span></td>
+          </tr>
+          <tr>
+            <td><code style="color:var(--accent)">allowed-tools</code></td>
+            <td><code style="color:var(--green)">Read, Write, Bash</code></td>
+            <td><span style="color:var(--text-dim)">실제 사용 도구 목록</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────── -->
+<!-- Section 3: Hooks ───────────────────────────── -->
+<section class="section" id="hooks">
+  <h2 class="section-title">Git 훅 시스템</h2>
+  <p class="section-desc">글로벌 훅 + 프로젝트별 훅 체이닝 아키텍처</p>
+
+  <div style="margin-bottom:24px">
+    <div class="card" style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-color:var(--cyan)">
+      <div style="font-size:1.2rem">⚙️</div>
+      <div>
+        <div style="font-weight:700;font-size:0.9rem;color:var(--cyan)">글로벌 훅 설치 방법</div>
+        <code style="font-size:0.8rem;color:var(--text-dim)">git config --global core.hooksPath ~/.claude/hooks</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="gap:32px">
+
+    <!-- pre-commit 플로우차트 -->
+    <div>
+      <div class="flow-title">
+        <span class="badge badge-orange">pre-commit</span>
+        민감 파일 검증 플로우
+      </div>
+      <div class="flow-nodes">
+
+        <div class="flow-node start">
+          <div class="flow-node-label">git commit 실행</div>
+          <div class="flow-node-sub">글로벌 pre-commit 훅 진입</div>
+        </div>
+        <div class="flow-arrow"></div>
+
+        <div class="flow-node action" style="border-color:var(--blue);background:var(--blue-bg)">
+          <div class="flow-node-label">스테이징 파일 목록 수집</div>
+          <div class="flow-node-sub">git diff --cached --name-only</div>
+        </div>
+        <div class="flow-arrow"></div>
+
+        <div class="flow-node action" style="border-color:var(--blue);background:var(--blue-bg)">
+          <div class="flow-node-label">파일 없으면 즉시 종료</div>
+          <div class="flow-node-sub">exit 0</div>
+        </div>
+        <div class="flow-arrow"></div>
+
+        <div class="flow-node" style="border-color:var(--yellow);background:var(--yellow-bg)">
+          <div class="flow-node-label">민감 파일 패턴 매칭?</div>
+          <div class="flow-node-sub">.env .key .pem .secret .credential</div>
+        </div>
+        <div class="flow-arrow"></div>
+
+        <div class="flow-branch">
+          <div class="flow-branch-item">
+            <span class="flow-branch-label yes">발견됨</span>
+            <div class="flow-arrow"></div>
+            <div class="flow-node" style="border-color:var(--yellow);background:var(--yellow-bg);width:100%;max-width:100%">
+              <div class="flow-node-label" style="font-size:0.8rem">SKIP_SENSITIVE_CHECK=1?</div>
+            </div>
+            <div class="flow-arrow"></div>
+            <div class="flow-branch" style="gap:8px">
+              <div class="flow-branch-item">
+                <span class="flow-branch-label no">미설정</span>
+                <div class="flow-arrow"></div>
+                <div class="flow-node error" style="width:100%;max-width:100%">
+                  <div class="flow-node-label" style="font-size:0.78rem">커밋 차단</div>
+                  <div class="flow-node-sub">exit 1</div>
+                </div>
+              </div>
+              <div class="flow-branch-item">
+                <span class="flow-branch-label yes">설정됨</span>
+                <div class="flow-arrow"></div>
+                <div class="flow-node action" style="width:100%;max-width:100%">
+                  <div class="flow-node-label" style="font-size:0.78rem">경고 출력 후 계속</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flow-branch-item">
+            <span class="flow-branch-label no">없음</span>
+            <div class="flow-arrow"></div>
+            <div class="flow-node action" style="width:100%;max-width:100%">
+              <div class="flow-node-label" style="font-size:0.8rem">pre-commit.local 있으면 실행</div>
+              <div class="flow-node-sub">.git/hooks/pre-commit.local</div>
+            </div>
+            <div class="flow-arrow"></div>
+            <div class="flow-node success" style="width:100%;max-width:100%">
+              <div class="flow-node-label" style="font-size:0.78rem">커밋 허용</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- post-commit + 체이닝 구조 설명 -->
+    <div>
+      <div class="flow-title">
+        <span class="badge badge-orange">post-commit</span>
+        프로젝트 훅 체이닝
+      </div>
+      <div class="flow-nodes">
+        <div class="flow-node start">
+          <div class="flow-node-label">커밋 완료</div>
+          <div class="flow-node-sub">글로벌 post-commit 훅 진입</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node action" style="border-color:var(--blue);background:var(--blue-bg)">
+          <div class="flow-node-label">set +e (에러 무시)</div>
+          <div class="flow-node-sub">커밋은 이미 완료됨, 훅 실패해도 유지</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node" style="border-color:var(--yellow);background:var(--yellow-bg)">
+          <div class="flow-node-label">post-commit.local 존재?</div>
+          <div class="flow-node-sub">.git/hooks/post-commit.local</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-branch">
+          <div class="flow-branch-item">
+            <span class="flow-branch-label yes">있음 + 실행권한</span>
+            <div class="flow-arrow"></div>
+            <div class="flow-node action" style="width:100%;max-width:100%">
+              <div class="flow-node-label" style="font-size:0.78rem">프로젝트별 훅 실행</div>
+            </div>
+          </div>
+          <div class="flow-branch-item">
+            <span class="flow-branch-label no">없음</span>
+            <div class="flow-arrow"></div>
+            <div class="flow-node success" style="width:100%;max-width:100%">
+              <div class="flow-node-label" style="font-size:0.78rem">exit 0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:28px">
+        <div class="flow-title">민감 파일 패턴</div>
+        <div class="card" style="padding:16px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span class="badge badge-red">.env</span>
+            <span class="badge badge-red">.key</span>
+            <span class="badge badge-red">.pem</span>
+            <span class="badge badge-red">.secret</span>
+            <span class="badge badge-red">.credential</span>
+          </div>
+          <div style="margin-top:12px;font-size:0.78rem;color:var(--text-dim)">
+            건너뛰기: <code style="color:var(--yellow)">SKIP_SENSITIVE_CHECK=1 git commit</code>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="flow-title">체이닝 파일명 규칙</div>
+        <div class="card" style="padding:16px">
+          <div class="card-desc">
+            글로벌 훅이 실행된 후, 프로젝트 Git 디렉토리의 <code>.local</code> 파일을 찾아 연계 실행합니다.
+          </div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem">
+              <span class="badge badge-orange">pre-commit</span>
+              <span style="color:var(--text-muted)">→</span>
+              <code style="color:var(--text-dim)">.git/hooks/pre-commit.local</code>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem">
+              <span class="badge badge-orange">post-commit</span>
+              <span style="color:var(--text-muted)">→</span>
+              <code style="color:var(--text-dim)">.git/hooks/post-commit.local</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────── -->
+<!-- Section 4: Sync ────────────────────────────── -->
+<section class="section" id="sync">
+  <h2 class="section-title">동기화(배포) 시스템</h2>
+  <p class="section-desc">sync.json 매핑 설정을 기반으로 소스에서 ~/.claude/로 자동 배포</p>
+
+  <!-- sync.sh 명령어 -->
+  <div style="margin-bottom:32px">
+    <div style="font-size:0.9rem;font-weight:700;margin-bottom:12px;color:var(--text-dim)">sync.sh 명령어</div>
+    <div class="grid-3" style="gap:10px">
+      <div class="card" style="padding:14px 16px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent);margin-bottom:4px">scripts/sync.sh -n</div>
+        <div style="font-size:0.78rem;color:var(--text-dim)">dry-run — 변경 미리보기</div>
+      </div>
+      <div class="card" style="padding:14px 16px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent);margin-bottom:4px">scripts/sync.sh</div>
+        <div style="font-size:0.78rem;color:var(--text-dim)">전체 동기화 (확인 후 실행)</div>
+      </div>
+      <div class="card" style="padding:14px 16px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent);margin-bottom:4px">scripts/sync.sh --item gon:todo</div>
+        <div style="font-size:0.78rem;color:var(--text-dim)">특정 항목만 동기화</div>
+      </div>
+      <div class="card" style="padding:14px 16px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent);margin-bottom:4px">scripts/sync.sh --check</div>
+        <div style="font-size:0.78rem;color:var(--text-dim)">sync.json 유효성 검사</div>
+      </div>
+      <div class="card" style="padding:14px 16px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent);margin-bottom:4px">scripts/sync.sh -f</div>
+        <div style="font-size:0.78rem;color:var(--text-dim)">확인 없이 강제 동기화</div>
+      </div>
+      <div class="card" style="padding:14px 16px;border-color:var(--yellow)">
+        <div style="font-size:0.75rem;color:var(--yellow);font-weight:600;margin-bottom:4px">의존성</div>
+        <div style="font-size:0.78rem;color:var(--text-dim)"><code>jq</code> + <code>rsync</code></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 소스 → 설치 위치 관계도 -->
+  <div style="font-size:0.9rem;font-weight:700;margin-bottom:12px;color:var(--text-dim)">소스 → 설치 위치 매핑</div>
+
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:32px">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>이름</th>
+          <th>타입</th>
+          <th>소스</th>
+          <th>설치 위치</th>
+          <th>처리 방식</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code style="color:var(--accent)">gon:todo</code></td>
+          <td><span class="badge badge-cyan">skill</span></td>
+          <td><code style="font-size:0.78rem;color:var(--text-dim)">skills/smart-todo/</code></td>
+          <td><code style="font-size:0.78rem;color:var(--green)">~/.claude/skills/gon:todo/</code></td>
+          <td><span style="font-size:0.78rem;color:var(--text-dim)">rsync 디렉토리</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">gon:save-issue</code></td>
+          <td><span class="badge badge-cyan">skill</span></td>
+          <td><code style="font-size:0.78rem;color:var(--text-dim)">skills/save-issue/</code></td>
+          <td><code style="font-size:0.78rem;color:var(--green)">~/.claude/skills/gon:save-issue/</code></td>
+          <td><span style="font-size:0.78rem;color:var(--text-dim)">rsync 디렉토리</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">gon:evolve</code></td>
+          <td><span class="badge badge-cyan">skill</span></td>
+          <td><code style="font-size:0.78rem;color:var(--text-dim)">skills/evolve/</code></td>
+          <td><code style="font-size:0.78rem;color:var(--green)">~/.claude/skills/gon:evolve/</code></td>
+          <td><span style="font-size:0.78rem;color:var(--text-dim)">rsync 디렉토리</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">gon:doc-graph</code></td>
+          <td><span class="badge badge-cyan">skill</span></td>
+          <td><code style="font-size:0.78rem;color:var(--text-dim)">skills/doc-graph/</code></td>
+          <td><code style="font-size:0.78rem;color:var(--green)">~/.claude/skills/gon:doc-graph/</code></td>
+          <td><span style="font-size:0.78rem;color:var(--text-dim)">rsync 디렉토리</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">pre-commit</code></td>
+          <td><span class="badge badge-orange">hook</span></td>
+          <td><code style="font-size:0.78rem;color:var(--text-dim)">hooks/pre-commit</code></td>
+          <td><code style="font-size:0.78rem;color:var(--green)">~/.claude/hooks/pre-commit</code></td>
+          <td><span style="font-size:0.78rem;color:var(--text-dim)">파일 복사 + chmod +x</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">post-commit</code></td>
+          <td><span class="badge badge-orange">hook</span></td>
+          <td><code style="font-size:0.78rem;color:var(--text-dim)">hooks/post-commit</code></td>
+          <td><code style="font-size:0.78rem;color:var(--green)">~/.claude/hooks/post-commit</code></td>
+          <td><span style="font-size:0.78rem;color:var(--text-dim)">파일 복사 + chmod +x</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">evolve-analyzer</code></td>
+          <td><span class="badge badge-purple">agent</span></td>
+          <td><code style="font-size:0.78rem;color:var(--text-dim)">agents/evolve-analyzer.md</code></td>
+          <td><code style="font-size:0.78rem;color:var(--green)">~/.claude/agents/evolve-analyzer</code></td>
+          <td><span style="font-size:0.78rem;color:var(--text-dim)">파일 단위 복사</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- exclude_patterns -->
+  <div class="grid-2" style="gap:16px">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:10px">exclude_patterns (배포 제외 파일)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <span class="badge badge-red">DESIGN.md</span>
+        <span class="badge badge-red">examples/</span>
+        <span class="badge badge-red">*.test.*</span>
+      </div>
+      <div class="card-desc" style="margin-top:10px">설계 문서, 예제 파일, 테스트 파일은 개발용으로만 사용하며 ~/.claude/에 배포되지 않습니다.</div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:10px">새 스킬 추가 절차</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.82rem">
+          <span class="badge badge-cyan" style="flex-shrink:0">1</span>
+          <span style="color:var(--text-dim)"><code>skills/{name}/SKILL.md</code> 작성 (gon: 접두어 필수)</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.82rem">
+          <span class="badge badge-cyan" style="flex-shrink:0">2</span>
+          <span style="color:var(--text-dim)"><code>sync.json</code> items 배열에 항목 추가</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.82rem">
+          <span class="badge badge-cyan" style="flex-shrink:0">3</span>
+          <span style="color:var(--text-dim)"><code>scripts/sync.sh --item {name}</code> 설치 테스트</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.82rem">
+          <span class="badge badge-cyan" style="flex-shrink:0">4</span>
+          <span style="color:var(--text-dim)">CLAUDE.md 스킬 목록 업데이트</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────── -->
+<!-- Section 5: Evolve Flow ─────────────────────── -->
+<section class="section" id="evolve">
+  <h2 class="section-title">Evolve 자기 개선 흐름</h2>
+  <p class="section-desc">/gon:evolve가 이 저장소를 분석하고 개선하는 전체 사이클</p>
+
+  <div class="grid-2" style="gap:32px">
+
+    <!-- 타임라인: evolve 사이클 -->
+    <div>
+      <div style="font-size:0.9rem;font-weight:700;margin-bottom:16px;color:var(--text-dim)">/gon:evolve 전체 사이클</div>
+      <div class="timeline">
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--accent)"></div>
+          <div class="timeline-card">
+            <div class="timeline-step" style="color:var(--accent)">Step 1</div>
+            <div class="timeline-title">인벤토리 수집</div>
+            <div class="timeline-desc">sync.json을 파싱하여 모든 스킬, 훅, 에이전트 목록 수집</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--yellow)"></div>
+          <div class="timeline-card">
+            <div class="timeline-step" style="color:var(--yellow)">Step 2</div>
+            <div class="timeline-title">evolve-analyzer 에이전트 스폰</div>
+            <div class="timeline-desc">코드베이스 전체를 분석하는 전문 에이전트를 생성. Read, Bash, Grep, Glob 도구 사용</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--purple)"></div>
+          <div class="timeline-card">
+            <div class="timeline-step" style="color:var(--purple)">Step 3</div>
+            <div class="timeline-title">코드베이스 분석 → 발견 목록 반환</div>
+            <div class="timeline-desc">스킬 품질, 훅 구조, 에이전트 필드, sync 정합성, 문서 최신성 점검. 결과를 JSON으로 반환</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--orange)"></div>
+          <div class="timeline-card">
+            <div class="timeline-step" style="color:var(--orange)">Step 4</div>
+            <div class="timeline-title">결과 종합 → 사용자 승인</div>
+            <div class="timeline-desc">발견된 이슈를 severity 순(error→warning→info)으로 정리 후 적용 여부 확인</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--green)"></div>
+          <div class="timeline-card">
+            <div class="timeline-step" style="color:var(--green)">Step 5</div>
+            <div class="timeline-title">개선 적용</div>
+            <div class="timeline-desc">승인된 항목에 대해 파일 수정 실행</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--cyan)"></div>
+          <div class="timeline-card">
+            <div class="timeline-step" style="color:var(--cyan)">Step 6</div>
+            <div class="timeline-title">동기화 검증 → 배포</div>
+            <div class="timeline-desc">sync.sh dry-run으로 검증 후 ~/.claude/에 배포</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--pink)"></div>
+          <div class="timeline-card">
+            <div class="timeline-step" style="color:var(--pink)">Step 7</div>
+            <div class="timeline-title">evolution-log.json 이력 기록</div>
+            <div class="timeline-desc">사이클 결과를 append-only 로그 파일에 영구 기록</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 에이전트 분석 체크리스트 -->
+    <div>
+      <div style="font-size:0.9rem;font-weight:700;margin-bottom:16px;color:var(--text-dim)">evolve-analyzer 분석 체크리스트</div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+
+        <div class="card" style="border-color:var(--accent);padding:16px 18px">
+          <div style="font-weight:700;font-size:0.85rem;color:var(--accent);margin-bottom:8px">SQ — 스킬 품질</div>
+          <div style="display:flex;flex-direction:column;gap:4px;font-size:0.78rem;color:var(--text-dim)">
+            <div>✓ frontmatter 필수 필드 존재 여부</div>
+            <div>✓ allowed-tools 목록 정합성</div>
+            <div>✓ 서브커맨드 문서화 완전성</div>
+            <div>✓ 에러 처리 섹션 존재</div>
+            <div>✓ semver 버전 형식 준수</div>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:var(--orange);padding:16px 18px">
+          <div style="font-weight:700;font-size:0.85rem;color:var(--orange);margin-bottom:8px">HK — 훅 품질</div>
+          <div style="display:flex;flex-direction:column;gap:4px;font-size:0.78rem;color:var(--text-dim)">
+            <div>✓ shebang 존재 여부</div>
+            <div>✓ 적절한 에러 처리 (set -euo pipefail)</div>
+            <div>✓ 프로젝트별 훅 체이닝(.local) 지원</div>
+            <div>✓ 건너뛰기 메커니즘 (환경변수)</div>
+            <div>✓ 민감 파일 패턴 최신성</div>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:var(--purple);padding:16px 18px">
+          <div style="font-weight:700;font-size:0.85rem;color:var(--purple);margin-bottom:8px">AG — 에이전트 품질</div>
+          <div style="display:flex;flex-direction:column;gap:4px;font-size:0.78rem;color:var(--text-dim)">
+            <div>✓ 필수 필드: name, description, tools, color</div>
+            <div>✓ role 섹션 명확성</div>
+            <div>✓ 최소 권한 원칙 준수</div>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:var(--green);padding:16px 18px">
+          <div style="font-weight:700;font-size:0.85rem;color:var(--green);margin-bottom:8px">SY/DC/CC — 시스템·문서·횡단</div>
+          <div style="display:flex;flex-direction:column;gap:4px;font-size:0.78rem;color:var(--text-dim)">
+            <div>✓ sync.json 항목과 실제 소스 정합성</div>
+            <div>✓ CLAUDE.md 모든 구성요소 문서화 여부</div>
+            <div>✓ 스킬 간 코드 중복</div>
+            <div>✓ 버전 번호 일관성</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="code-panel">
+          <div class="code-header">📋 발견 ID 규칙</div>
+          <div class="code-body">
+            <span class="key">SQ</span>-001  Skill Quality<br>
+            <span class="key">HK</span>-001  Hook<br>
+            <span class="key">AG</span>-001  Agent<br>
+            <span class="key">SY</span>-001  Sync System<br>
+            <span class="key">DC</span>-001  Documentation<br>
+            <span class="key">CC</span>-001  Cross-cutting<br>
+            <br>
+            <span class="cmt"># severity: error | warning | info</span><br>
+            <span class="cmt"># impact:   high | medium | low</span><br>
+            <span class="cmt"># effort:   trivial | small | medium | large</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function toggleTree(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.tree-chevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+}
+</script>
+</body>
+</html>
