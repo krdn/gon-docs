@@ -2,8 +2,48 @@
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 
-/* ── doc-graph 디자인 시스템 → Fumadocs 테마 매핑 ── */
-:root {
+/* ── 라이트 모드 ── */
+:root, .light {
+  --color-fd-background: #ffffff;
+  --color-fd-foreground: #1e293b;
+  --color-fd-muted: #f1f5f9;
+  --color-fd-muted-foreground: #64748b;
+  --color-fd-card: #ffffff;
+  --color-fd-card-foreground: #1e293b;
+  --color-fd-border: #e2e8f0;
+  --color-fd-primary: #0284c7;
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-accent: #f0f9ff;
+  --color-fd-accent-foreground: #1e293b;
+  --color-fd-ring: #0284c7;
+  --color-fd-popover: #ffffff;
+  --color-fd-popover-foreground: #1e293b;
+
+  --dg-bg: #ffffff;
+  --dg-surface: #f8fafc;
+  --dg-surface2: #f1f5f9;
+  --dg-surface3: #e2e8f0;
+  --dg-border: #e2e8f0;
+  --dg-border-hover: #cbd5e1;
+  --dg-text: #1e293b;
+  --dg-text-dim: #64748b;
+  --dg-text-muted: #94a3b8;
+  --dg-accent: #0284c7;
+  --dg-accent2: #6366f1;
+  --dg-purple: #7c3aed;
+  --dg-green: #16a34a;
+  --dg-yellow: #d97706;
+  --dg-orange: #ea580c;
+  --dg-pink: #db2777;
+  --dg-red: #dc2626;
+  --dg-cyan: #0891b2;
+  --dg-blue: #2563eb;
+
+  color-scheme: light;
+}
+
+/* ── 다크 모드 ── */
+.dark {
   --color-fd-background: #0a0e1a;
   --color-fd-foreground: #e2e8f0;
   --color-fd-muted: #131829;
@@ -19,7 +59,6 @@
   --color-fd-popover: #131829;
   --color-fd-popover-foreground: #e2e8f0;
 
-  /* doc-graph 원본 변수 (컴포넌트 내부 사용) */
   --dg-bg: #0a0e1a;
   --dg-surface: #131829;
   --dg-surface2: #1c2340;
@@ -39,10 +78,7 @@
   --dg-red: #f87171;
   --dg-cyan: #22d3ee;
   --dg-blue: #60a5fa;
-}
 
-/* 항상 다크 모드 강제 */
-html {
   color-scheme: dark;
 }
 
@@ -57,7 +93,10 @@ code, pre, .mono {
 }
 
 /* ── Fumadocs 사이드바 커스텀 ── */
-:root {
+:root, .light {
+  --color-fd-sidebar-foreground: #1e293b;
+}
+.dark {
   --color-fd-sidebar-foreground: #e2e8f0;
 }
 
